@@ -11,53 +11,16 @@ import {
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 
-const PHASES = [
-  {
-    title: "Identification",
-    description: "Capture what is actually happening in the network.",
-    steps: [
-      "Summarize the reported alarms, symptoms, and timestamps.",
-      "Confirm the affected services, regions, or customers.",
-      "Flag any immediate safety risks such as power or cooling alerts.",
-    ],
-  },
-  {
-    title: "Localization",
-    description: "Pinpoint where the problem lives.",
-    steps: [
-      "Correlate alarms with topology diagrams and recent maintenance.",
-      "List the devices, links, or domains that require checks first.",
-      "Capture known-good baselines for later comparison.",
-    ],
-  },
-  {
-    title: "Analysis",
-    description: "Deep-dive diagnostics before making changes.",
-    steps: [
-      "Execute mandatory health commands in the documented order.",
-      "Compare logs, counters, and KPIs against baselines.",
-      "Note any prerequisite checks that must pass before actions.",
-    ],
-  },
-  {
-    title: "Corrective Action",
-    description: "Only after analysis confirms the target component.",
-    steps: [
-      "List approved fixes and their rollback plan.",
-      "Validate change windows and safety controls.",
-      "Record the exact CLI or workflow steps to be executed.",
-    ],
-  },
-  {
-    title: "Validation & Documentation",
-    description: "Prove recovery and capture evidence.",
-    steps: [
-      "Rerun key diagnostics to confirm service restoration.",
-      "Collect screenshots, logs, and ticket updates.",
-      "Document lessons learned and follow-up actions.",
-    ],
-  },
-];
+type ProcedureStep = {
+  text: string;
+  kind: "action" | "check" | "caution" | string;
+};
+
+const KIND_STYLES: Record<string, string> = {
+  action: "border-blue-100 bg-blue-50 text-blue-900",
+  check: "border-emerald-100 bg-emerald-50 text-emerald-900",
+  caution: "border-amber-100 bg-amber-50 text-amber-900",
+};
 
 export async function clientLoader({ context }: Route.ClientLoaderArgs) {
   const res = await fetch("/api/health");
@@ -69,36 +32,69 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [alarmPatterns, setAlarmPatterns] = useState("");
   const [errorMessages, setErrorMessages] = useState("");
   const [symptoms, setSymptoms] = useState("");
+  const [steps, setSteps] = useState<ProcedureStep[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastQuery, setLastQuery] = useState("");
 
-  const summary = useMemo(() => {
+  const queryText = useMemo(() => {
     const sections = [
-      alarmPatterns && `Alarms: ${alarmPatterns}`,
-      errorMessages && `Errors: ${errorMessages}`,
+      alarmPatterns && `Alarm patterns: ${alarmPatterns}`,
+      errorMessages && `Error messages: ${errorMessages}`,
       symptoms && `Symptoms: ${symptoms}`,
     ].filter(Boolean);
 
-    if (sections.length === 0) {
-      return "Waiting for engineer input.";
+    return sections.join("\n");
+  }, [alarmPatterns, errorMessages, symptoms]);
+
+  const summaryText = queryText || "Waiting for engineer input.";
+
+  async function handleGenerate() {
+    const trimmed = queryText.trim();
+
+    if (trimmed.length < 3) {
+      setError("Add at least a few details before generating.");
+      setSteps([]);
+      return;
     }
 
-    return sections.join(" | ");
-  }, [alarmPatterns, errorMessages, symptoms]);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("query", trimmed);
+
+      const response = await fetch("/api/create-procedure", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      const rawSteps = data?.answer?.steps;
+      const stepsResponse: ProcedureStep[] = Array.isArray(rawSteps)
+        ? rawSteps
+        : [];
+      setSteps(stepsResponse);
+      setLastQuery(trimmed);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? `Unable to generate steps: ${err.message}`
+          : "Unable to generate steps right now.";
+      setError(message);
+      setSteps([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
-      <section className="flex flex-col gap-3 text-center sm:text-left">
-        <p className="text-sm text-muted-foreground">
-          Backend status: {loaderData.helloText.status}
-        </p>
-        <h1 className="text-3xl font-semibold">
-          Troubleshooting playbook workspace
-        </h1>
-        <p className="text-muted-foreground text-base">
-          Capture alarms, symptoms, and error details. The assistant keeps them
-          structured across the five official troubleshooting phases.
-        </p>
-      </section>
-
       <Card>
         <CardHeader>
           <CardTitle>Incident intake</CardTitle>
@@ -109,15 +105,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="alarms">Alarm patterns</Label>
-            <Textarea
-              id="alarms"
-              value={alarmPatterns}
-              onChange={(event) => setAlarmPatterns(event.target.value)}
-              placeholder="Example: Multiple LOS alarms triggered on core switches SW-01 / SW-02 at 12:05 UTC."
-            />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="errors">Error messages</Label>
             <Textarea
               id="errors"
@@ -126,73 +113,96 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               placeholder="Paste CLI or syslog excerpts that need to be referenced."
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="symptoms">Symptom description</Label>
-            <Textarea
-              id="symptoms"
-              value={symptoms}
-              onChange={(event) => setSymptoms(event.target.value)}
-              placeholder="e.g. North region customers cannot reach VoIP gateways; packet loss on MPLS PE routers."
-            />
-          </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              Summary draft: {summary}
-            </p>
-            <Button type="button" variant="default" className="w-full sm:w-fit">
-              Generate workflow (coming soon)
+            <Button
+              type="button"
+              variant="default"
+              className="w-full sm:w-fit"
+              onClick={handleGenerate}
+              disabled={isLoading}
+            >
+              {isLoading ? "Generating..." : "Generate workflow"}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        {PHASES.map((phase) => (
-          <Card key={phase.title}>
-            <CardHeader>
-              <CardTitle>{phase.title}</CardTitle>
-              <CardDescription>{phase.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ol className="space-y-3 text-sm leading-relaxed text-foreground/90">
-                {phase.steps.map((step, index) => (
-                  <li key={step} className="flex gap-2">
-                    <span className="text-muted-foreground">{index + 1}.</span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ol>
-              {phase.title === "Identification" && (
-                <p className="mt-4 rounded-md border border-dashed border-amber-400 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
-                  Safety emphasis: confirm power/environment alarms before
-                  touching live equipment.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-
       <Card>
         <CardHeader>
-          <CardTitle>Guide references</CardTitle>
+          <CardTitle>Generated procedure</CardTitle>
           <CardDescription>
-            Link back to the source material for traceability.
+            The backend turns the intake summary into ordered troubleshooting
+            steps. It matches the format expected by the vector search + LLM
+            pipeline.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>
-            All steps follow the official workflow documented in
-            TroubleshootingGuide-FrontlineLAN.pdf and the requirements doc in
-            <code className="ml-1 rounded bg-muted px-1 py-0.5">
-              docs/requirements/requirements-en.md
-            </code>
-            .
-          </p>
-          <p>
-            A future version will deep-link to the exact section numbers once
-            the retrieval pipeline is connected to the vector database.
-          </p>
+        <CardContent className="space-y-4">
+          {lastQuery && (
+            <p className="text-xs text-muted-foreground">
+              Last query sent: {lastQuery}
+            </p>
+          )}
+          {error && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">
+              Generating procedure with /api/create-procedure...
+            </p>
+          )}
+          {!isLoading && steps.length === 0 && !error && (
+            <p className="text-sm text-muted-foreground">
+              Provide incident details above, then generate to see the suggested
+              sequence of checks and actions.
+            </p>
+          )}
+          {steps.length > 0 && (
+            <ol className="space-y-3">
+              {steps.map((step, index) => {
+                const kindKey =
+                  typeof step.kind === "string" ? step.kind.toLowerCase() : "";
+                const tone =
+                  KIND_STYLES[kindKey] ??
+                  "border-slate-200 bg-slate-50 text-slate-900";
+                const kindLabel =
+                  kindKey === "check"
+                    ? "Check"
+                    : kindKey === "caution"
+                      ? "Caution"
+                      : "Action";
+
+                return (
+                  <li
+                    key={`${index}-${step.text}`}
+                    className="rounded-md border bg-background px-3 py-3 shadow-sm"
+                  >
+                    <div className="flex gap-3">
+                      <span className="mt-1 h-6 w-6 shrink-0 rounded-full bg-muted text-center text-xs font-semibold leading-6 text-muted-foreground">
+                        {index + 1}
+                      </span>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs font-semibold uppercase tracking-wide ${tone}`}
+                          >
+                            {kindLabel}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Suggested step from the assistant
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed text-foreground/90">
+                          {step.text}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </CardContent>
       </Card>
     </div>
