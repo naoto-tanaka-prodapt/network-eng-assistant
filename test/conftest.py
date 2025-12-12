@@ -4,7 +4,7 @@ from models import Base
 from vector_search import inmemory_vector_store, get_vector_store
 import pytest
 from main import app 
-from db import get_session
+from libs.db import get_session
 from sqlalchemy.orm import sessionmaker
 from config import settings
 from testcontainers.postgres import PostgresContainer

@@ -1,0 +1,20 @@
+meta {
+  name: create-procedure
+  type: http
+  seq: 1
+}
+
+post {
+  url: http:localhost:8000/api/create-procedure
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  query: LANが遅い。まず何を確認すべき？
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

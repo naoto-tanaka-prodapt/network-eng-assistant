@@ -7,9 +7,10 @@ from fastapi import FastAPI, Form, HTTPException, Request, Response
 # from routers import job_application_router, job_board_router, llm_router, job_post_router
 # from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from db import get_session
+from libs.db import get_session
 from sqlalchemy import text
 from config import settings
+from routers import search_router
 # from auth import authenticate_admin, AdminAuthzMiddleware, AdminSessionMiddleware, delete_admin_session
 # from schemas import AdminLoginForm
 
@@ -17,7 +18,7 @@ init_logger(project="Prodapt", api_key=settings.BRAINTRUST_API_KEY)
 
 app = FastAPI()
 
-# app.include_router(job_board_router.router)
+app.include_router(search_router.router)
 # app.include_router(job_application_router.router)
 # app.include_router(llm_router.router)
 # app.include_router(job_post_router.router)
@@ -36,9 +37,9 @@ async def health():
       print(f"Failed to connect: {e}")
       return {"status": "ng"}
   
-## local file directory
-if not settings.PRODUCTION:
-  app.mount("/uploads", StaticFiles(directory="uploads"))
+# ## local file directory
+# if not settings.PRODUCTION:
+#   app.mount("/uploads", StaticFiles(directory="uploads"))
 
 # ## Auth
 # @app.post("/api/admin-login")

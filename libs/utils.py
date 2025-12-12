@@ -4,7 +4,7 @@ from io import BytesIO
 from pypdf import PdfReader
 from llm.evaluate_resume import evaluate_resume_with_ai
 from models import JobApplicationAIEvaluation
-from db import get_session
+from libs.db import get_session
 
 ## Utils
 def create_random_file_name(extention):
