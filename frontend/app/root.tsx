@@ -8,7 +8,7 @@ export default function App() {
   return (
     <html>
       <head>
-        <title>Jobify</title>
+        <title>Network Incident Helper</title>
         <Meta />
         <Links />
       </head>
