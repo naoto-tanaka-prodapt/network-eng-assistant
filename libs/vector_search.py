@@ -6,7 +6,7 @@ from config import settings
 from qdrant_client.http.models import Distance, VectorParams, Filter, FieldCondition, MatchValue
 from langchain_core.documents import Document
 
-COLLECTION_NAME = "frontline_lan_recursive"
+COLLECTION_NAME = "frontline_lan_metadata"
 
 def get_vector_store():
     embeddings = OpenAIEmbeddings(model="text-embedding-3-large", api_key=settings.OPENAI_API_KEY)

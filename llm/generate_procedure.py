@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 from config import settings
@@ -15,24 +15,52 @@ model = ChatOpenAI(model="gpt-5.1-chat-latest", api_key=settings.OPENAI_API_KEY)
 # -------------------------
 # Pydantic schema
 # -------------------------
+PhaseName = Literal["identification", "localization", "analysis", "action", "verification"]
+
+class Citation(BaseModel):
+    chunk_id: str = Field(..., description="Retrieved chunk_id (unique).")
+    page_start: int = Field(..., description="0-based page index start.")
+    page_end: int = Field(..., description="0-based page index end.")
+    section_path: List[str] = Field(default_factory=list, description="TOC-based section path/title.")
+    part: Optional[str] = Field(None, description="intro|physical|network|switches|... if available")
+
 class Step(BaseModel):
-    text: str = Field(description="ユーザーがそのまま実行できる1つの対応ステップ")
-    kind: str = Field(default="action", description="action | check | caution など(UIでアイコン分けしたい時用)")
+    title: str = Field(..., description="Short step title (<= 12 words).")
+    instruction: str = Field(..., description="What to do, based ONLY on retrieved manual text.")
+    expected_result: Optional[str] = Field(None, description="What you expect to observe after the step (if stated in manual).")
+    citations: List[Citation] = Field(..., description="One or more citations supporting this step.")
 
-class Procedure(BaseModel):
-    steps: List[Step] = Field(default_factory=list, description="上から順に実行する手順")
+class PhaseOutput(BaseModel):
+    phase: PhaseName
+    steps: List[Step] = Field(default_factory=list, description="Steps for this phase. Can be empty if not found.")
+
+class SafetyCheck(BaseModel):
+    warning: str = Field(..., description="Safety / risk / caution statement grounded in the manual.")
+    risk: Literal["low", "medium", "high", "unknown"] = "unknown"
+    citations: List[Citation] = Field(...)
+
+class TroubleshootingResponse(BaseModel):
+    issue_summary: str = Field(..., description="One-sentence summary of the user's issue.")
+    assumptions: List[str] = Field(default_factory=list, description="Assumptions made due to missing info, if any.")
+    phases: List[PhaseOutput] = Field(..., description="Exactly 5 phases in order.")
+    safety_checks: List[SafetyCheck] = Field(default_factory=list)
+    not_found: List[str] = Field(default_factory=list, description="What could not be found in the manual/retrieved context.")
 
 
-PROMPT_TEMPLATE = """
-You are an assistant that creates a troubleshooting procedure from the provided context.
 
-Rules:
-- Use ONLY the provided context. Do NOT invent steps not supported by it.
-- Output STRICTLY valid JSON only (no markdown, no extra text).
-- Steps must be in a logical execution order.
-- Each step must be a single, actionable instruction.
-- If the context is insufficient, include clarifying questions in "questions".
-- Use Japanese.
+PROMPT_TEMPLATE = """You are a frontline LAN troubleshooting assistant.
+You MUST follow the provided manual excerpts (context). Do NOT invent steps or facts.
+Every step and every safety check MUST have at least one citation from the provided context.
+If the manual does not contain an answer in the provided context, say so in `not_found` and leave the phase steps empty.
+
+You must structure your answer into 5 phases:
+1) identification
+2) localization
+3) analysis
+4) action
+5) verification
+
+Safety checks are cross-cutting and must be listed separately when present in the context.
 
 Context:
 {context}
@@ -43,21 +71,31 @@ User issue:
 {format_instructions}
 """
 
-def docs_to_context(docs: List[Document]) -> str:
-    parts: List[str] = []
-    for i, d in enumerate(docs, start=1):
-        parts.append(f"[EXCERPT {i}]\n{d.page_content}")
-    return "\n\n---\n\n".join(parts)
+def format_context_from_docs(docs):
+    blocks = []
+    for d in docs:
+        m = d.metadata or {}
+        raw = d.page_content or ""
+        blocks.append(
+            "----\n"
+            f"chunk_id: {m.get('chunk_id')}\n"
+            f"part: {m.get('part')}\n"
+            f"section_path: {m.get('section_path')}\n"
+            f"page_start: {m.get('page_start')}  page_end: {m.get('page_end')}\n"
+            f"text:\n{raw}\n"
+        )
+    return "\n".join(blocks)
+
 
 def generate_procedure(query: str, vector_store):
-    parser = PydanticOutputParser(pydantic_object=Procedure)
+    parser = PydanticOutputParser(pydantic_object=TroubleshootingResponse)
     prompt = ChatPromptTemplate.from_template(PROMPT_TEMPLATE).partial(format_instructions=parser.get_format_instructions())
-    retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+    retriever = vector_store.as_retriever(search_kwargs={"k": 3})
 
     chain = (
         {
             "query": RunnablePassthrough(),
-            "context": retriever | RunnableLambda(docs_to_context),
+            "context": retriever | RunnableLambda(format_context_from_docs),
         }
         | prompt
         | model
