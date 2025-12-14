@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, UploadFile, Request, Form
 from libs.vector_search import get_vector_store
 from schemas import CreateProcedureForm
-from llm.generate_procedure import generate_procedure
+from llm._generate_procedure import generate_procedure
 
 
 router = APIRouter()

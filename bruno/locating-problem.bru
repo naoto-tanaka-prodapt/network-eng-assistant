@@ -1,0 +1,22 @@
+meta {
+  name: locating-problem
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8000/api/locating
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  session_id: 11111
+  problem_interpretation: 社内ネットワークおよびWi-Fiに接続できず、インターネットが利用できない状態が発生している。
+  complaint_type: cant_connect
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

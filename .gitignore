@@ -210,3 +210,6 @@ __marimo__/
 uploads
 
 qdrant_store
+*.db
+*.db-shm
+*.db-wal

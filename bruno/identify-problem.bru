@@ -1,0 +1,21 @@
+meta {
+  name: identify-problem
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8000/api/identify
+  body: multipartForm
+  auth: inherit
+}
+
+body:multipart-form {
+  query: 社内ネットワークに接続できません。Wi-Fiに繋がらず、インターネットが使えない状態です。
+  session_id: 11111
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

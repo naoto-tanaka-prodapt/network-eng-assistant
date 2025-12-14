@@ -32,7 +32,22 @@ def get_vector_store():
 #     finally:
 #         client.close()
 
-def get_manual_documents(query: str, vector_store: QdrantVectorStore):
-    retriever = vector_store.as_retriever(search_kwargs={"k": 5})
+def get_manual_documents(query: str, k: int, vector_store: QdrantVectorStore):
+    retriever = vector_store.as_retriever(search_kwargs={"k": k})
     manuals = retriever.invoke(query)
     return manuals
+
+def format_context_from_docs(docs):
+    blocks = []
+    for d in docs:
+        m = d.metadata or {}
+        raw = d.page_content or ""
+        blocks.append(
+            "----\n"
+            f"chunk_id: {m.get('chunk_id')}\n"
+            f"part: {m.get('part')}\n"
+            f"section_path: {m.get('section_path')}\n"
+            f"page_start: {m.get('page_start')}  page_end: {m.get('page_end')}\n"
+            f"text:\n{raw}\n"
+        )
+    return "\n".join(blocks)
