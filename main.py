@@ -1,5 +1,6 @@
 import os
 
+from agents import set_default_openai_key, set_trace_processors
 from braintrust import init_logger
 from config import settings
 from typing import Annotated
@@ -10,11 +11,14 @@ from fastapi.staticfiles import StaticFiles
 from libs.db import get_session
 from sqlalchemy import text
 from config import settings
+from braintrust.wrappers.openai import BraintrustTracingProcessor
 from routers import agent_router, history_router
 # from auth import authenticate_admin, AdminAuthzMiddleware, AdminSessionMiddleware, delete_admin_session
 # from schemas import AdminLoginForm
 
-init_logger(project="Prodapt", api_key=settings.BRAINTRUST_API_KEY)
+init_logger(project="Neteng", api_key=settings.BRAINTRUST_API_KEY)
+set_trace_processors([BraintrustTracingProcessor(init_logger("Neteng", api_key=settings.BRAINTRUST_API_KEY))])
+set_default_openai_key(settings.OPENAI_API_KEY)
 
 app = FastAPI()
 

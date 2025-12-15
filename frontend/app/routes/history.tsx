@@ -1,38 +1,50 @@
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import type { Route } from "../+types/root";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+
+type HistoryListItem = {
+  id: number;
+  title: string;
+  created_at: string;
+};
 
 export async function clientLoader({ context }: Route.ClientLoaderArgs) {
   const res = await fetch(`/api/history`);
   const histories = await res.json();
-  return { histories }
+  return { histories: histories as HistoryListItem[] };
 }
 
-export default function JobBoards({ loaderData }: Route.ComponentProps) {
-  const fetcher = useFetcher()
+export default function HistoryList({ loaderData }: Route.ComponentProps) {
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 space-y-6">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <Table className="w-full table-fixed">
-          <TableHeader>
-            <TableRow className="bg-slate-50">
-              <TableHead className="w-24 text-slate-600">symptom</TableHead>
-              <TableHead className="w-64 text-slate-600">resolution</TableHead>
-              <TableHead className="w-64 text-slate-600">guide</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loaderData.histories.map((history) => (
-              <TableRow key={history.id} className="hover:bg-slate-50/80 transition">
-                <TableCell className="py-4 whitespace-pre-wrap align-top">{history.symptom}</TableCell>
-                <TableCell className="py-4 whitespace-pre-wrap align-top">{history.resolution}</TableCell>
-                <TableCell className="py-4 whitespace-pre-wrap align-top">{history.guide}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-10">
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold">History</h1>
+        <p className="text-sm text-muted-foreground">{loaderData.histories.length} records</p>
+      </div>
+
+      <div className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        {loaderData.histories.map((history) => (
+          <Link
+            key={history.id}
+            to={`/history/${history.id}`}
+            className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
+          >
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-foreground">{history.title}</p>
+              <p className="text-xs text-muted-foreground">{formatDate(history.created_at)}</p>
+            </div>
+            <span className="text-xs font-semibold uppercase text-muted-foreground">View</span>
+          </Link>
+        ))}
       </div>
     </div>
-  )
+  );
 }

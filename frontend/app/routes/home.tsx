@@ -31,6 +31,9 @@ type SafetyCheck = {
 type LocatingTest = {
   test_content: string;
   purpose: string;
+  success_criteria: string;
+  fail_criteria: string;
+  next_step_rule: string;
   ask_back: string;
   guide_basis: GuideBasis;
 };
@@ -208,36 +211,26 @@ export default function Home({ actionData }: Route.ComponentProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <div>
-            <CardTitle>Session</CardTitle>
-            <CardDescription>session_id is generated once and reused across phases.</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" onClick={resetSession} disabled={isSubmitting}>
-            New session
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">session_id</span>
-            <code className="rounded bg-slate-100 px-2 py-1 text-xs text-foreground">{sessionId}</code>
-            {isSubmitting && submittingPhase && (
-              <span className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">
-                {submittingPhase} is running...
-              </span>
-            )}
-            {errorMessage && (
-              <span className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{errorMessage}</span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-white px-4 py-3 text-sm">
+        <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+          {isSubmitting && submittingPhase && (
+            <span className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">
+              {submittingPhase} is running...
+            </span>
+          )}
+          {errorMessage && (
+            <span className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{errorMessage}</span>
+          )}
+        </div>
+        <Button variant="default" size="sm" onClick={resetSession} disabled={isSubmitting} className="ml-auto">
+          New session
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Step 1. Identify</CardTitle>
-          <CardDescription>Normalize the incident, understand the input, and extract keywords.</CardDescription>
+          <CardDescription>Interpreting alarms, symptoms, and error reports</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
@@ -289,7 +282,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
       <Card>
         <CardHeader>
           <CardTitle>Step 2. Locating</CardTitle>
-          <CardDescription>Divide-and-conquer tests and safety checks to narrow the fault domain.</CardDescription>
+          <CardDescription>Isolating the fault using tests and narrowing down affected components</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
@@ -327,9 +320,25 @@ export default function Home({ actionData }: Route.ComponentProps) {
                 <p className="text-xs font-semibold uppercase text-muted-foreground">Tests in order</p>
                 <ol className="space-y-2">
                   {locatingResult.test_in_order.map((item, index) => (
-                    <li key={`${item.test_content}-${index}`} className="rounded bg-white px-3 py-2">
-                      <p className="font-semibold">{item.test_content}</p>
-                      <p className="text-foreground/80">{item.purpose}</p>
+                    <li key={`${item.test_content}-${index}`} className="space-y-2 rounded bg-white px-3 py-3">
+                      <div className="space-y-1">
+                        <p className="font-semibold">{item.test_content}</p>
+                        <p className="text-foreground/80">{item.purpose}</p>
+                      </div>
+                      <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-2 text-sm">
+                        <div className="space-y-1">
+                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Success criteria</p>
+                          <p>{item.success_criteria}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Fail criteria</p>
+                          <p>{item.fail_criteria}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Next step rule</p>
+                          <p>{item.next_step_rule}</p>
+                        </div>
+                      </div>
                       <p className="text-xs text-muted-foreground">Ask back: {item.ask_back}</p>
                       <p className="text-[11px] text-muted-foreground">
                         {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
@@ -347,7 +356,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
       <Card>
         <CardHeader>
           <CardTitle>Step 3. Analyze</CardTitle>
-          <CardDescription>Run tests, record observations, and estimate the root cause.</CardDescription>
+          <CardDescription>Determining root cause from measurements and system behaviour</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
@@ -399,7 +408,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
       <Card>
         <CardHeader>
           <CardTitle>Step 4. Action</CardTitle>
-          <CardDescription>Suggest safe corrective actions with rollback and impact callouts.</CardDescription>
+          <CardDescription>Applying fixes and verifying their effectiveness</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
@@ -465,10 +474,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
       <Card>
         <CardHeader>
           <CardTitle>Step 5. Validate & Document</CardTitle>
-          <CardDescription>
-            Confirm unresolved issues or secondary impact. If clear, create and save docs; otherwise restart at Step 1 with
-            the same session_id.
-          </CardDescription>
+          <CardDescription>Ensuring no secondary issues remain</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">

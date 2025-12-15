@@ -4,8 +4,12 @@ from agents import Agent
 
 class ConclusionOutput(BaseModel):
     """
-    Documentation & User Feedback(あなたの意図に合わせた定義)
+    Documentation & User Feedback
     """
+    title: str = Field(
+        ...,
+        description="内容を一文に要約したタイトル"
+    )
     symptom: str = Field(
         ...,
         description="ユーザ/監視で特定可能な症状・兆候(例: エラー文、再現条件、挙動)"
@@ -42,6 +46,7 @@ CONCLUSION_SYSTEM_PROMPT = """あなたはネットワークトラブルシュ�
 - ガイド抜粋に根拠がある内容のみを書く(ガイド外の独自ルールを混ぜない)。
 
 出力について:
+- title には今回の内容を一文に要約してタイトルを生成
 - symptom には「ユーザ/監視/簡単な確認で特定できる情報」だけを書く。
   例:エラーメッセージ、発生条件、影響範囲の特徴、再現性の有無、時間帯など。
 - resolution には、実際に解決に寄与した手順を順序付きで簡潔にまとめる。
@@ -57,11 +62,12 @@ CONCLUSION_SYSTEM_PROMPT = """あなたはネットワークトラブルシュ�
 
 出力要件:
 - 出力は必ず JSON のみ。
-- JSONは次の3キーのみを含むこと:
+- JSONは次の4キーのみを含むこと:
   1) symptom
   2) resulution
   3) user_feedback
   4) guide
+  5) title
 - 余計なキー、Markdown、前置き、説明文は出力しない。
 """
 

@@ -1,10 +1,9 @@
 from enum import Enum
-from agents import Agent, set_default_openai_key
+from agents import Agent, set_default_openai_key, set_trace_processors
+from braintrust import init_logger
 from pydantic import BaseModel, Field
 from typing import List
 from config import settings
-
-set_default_openai_key(settings.OPENAI_API_KEY)
 
 class MediaHint(str, Enum):
     physical = "physical"
@@ -15,37 +14,37 @@ class MediaHint(str, Enum):
 class IdentificationOutput(BaseModel):
     facts: str = Field(
         ...,
-        description="入力から読み取れる事実（アラーム/症状/エラー/観測）を短文で列挙。推測は禁止。"
+        description="List the facts that can be directly derived from the input (alarms / symptoms / errors / observations) in short sentences. Speculation is not allowed."
     )
     extracted_keywords: List[str] = Field(
         ...,
-        description="検索に使えるキーワード（機器/ポート/プロトコル/手法）。重複なし。"
+        description="Network technical keywords (e.g., device, port, protocol, test method). No duplicates."
     )
     media_hint: MediaHint = Field(
         ...,
-        description="physical/network/switch の当たり（入力に根拠が無ければ unknown）"
+        description="Indicates whether the issue is likely related to physical, network, or switch. Set to unknown if there is no evidence in the input."
     )
 
-IDENTIFY_SYSTEM_PROMPT = """
-あなたはネットワークトラブルシューティング支援システムの Identify Agent です。
+IDENTIFY_SYSTEM_PROMPT = """You are the Identify Agent of a network troubleshooting support system.
 
-目的：
-ユーザ入力（アラーム/症状/エラーメッセージ）を解釈し、「何が起きている問題か」を定義する。
-あなたの役割は Identify(問題定義とキーワード抽出)まで。原因分析・対処提案・テスト手順の提案は禁止。
+Objective:
+Interpret user input (alarms / symptoms / error messages) and define what problem is occurring.
+Your responsibility is limited to Identify (problem definition and keyword extraction).
+Root cause analysis, remediation proposals, and test procedure suggestions are strictly prohibited.
 
-実施内容：
-1) 入力から読み取れる事実(facts)を列挙（推測しない）
-2) media_hintはphysical/network/switch のどこに問題かの当たり。入力に根拠が無ければ unknown。
-3) extracted_keywordsは入力された情報をもとに検索に使えるキーワードを抽出する。最大10個。
+Tasks:
+- List the facts that can be read from the input (do not speculate).
+- media_hint indicates whether the issue is likely related to physical / network / switch. If there is no evidence in the input, set it to unknown.
+- extracted_keywords Extract keywords strictly limited to network-related technical terms, extracted based on the provided input. Maximum of 8 keywords.
 
-厳守：
-- 入力にないことは書かない。
-- 原因推定、対処提案、コマンド提示、詳細なテスト手順の提案は禁止
-- 出力は指定スキーマに一致する JSON のみ
+Rules:
+- Do not write anything that is not present in the input.
+- Estimating causes, proposing countermeasures, presenting commands, or suggesting detailed test procedures are prohibited.
+- The output must be JSON only and must conform to the specified schema.
 """
 
 IDENTIFY_USER_PROMPT = """
-以下がネットワークエンジニアが入力したアラーム、症状、エラーメッセージです:
+Below are the alarms, symptoms, and error messages entered by the network engineer.:
 {error_message}
 """
 

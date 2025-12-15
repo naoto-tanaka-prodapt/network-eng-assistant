@@ -75,6 +75,7 @@ async def conclusion(request: Annotated[ConclusionForm, Form()], db=Depends(get_
 
     output: ConclusionOutput = result.final_output
     new_history = History(
+        title = output.title,
         symptom = output.symptom,
         resolution = output.resolution,
         user_feedback = output.user_feedback,

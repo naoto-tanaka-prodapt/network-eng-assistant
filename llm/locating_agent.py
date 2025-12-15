@@ -6,20 +6,23 @@ from agents import Agent
 
 
 class GuideBasisItem(BaseModel):
-    start_page: str = Field(..., description="参照したガイドチャンクの開始ページ")
-    last_page: str = Field(..., description="参照したガイドチャンクの終了ページ")
-    chapter: str = Field(..., description="参照したガイドチャンクの章")
+    start_page: str = Field(..., description="Starting page of the referenced guide chunk")
+    last_page: str = Field(..., description="Ending page of the referenced guide chunk")
+    chapter: str = Field(..., description="Chapter or section title of the referenced guide chunk")
     note: Optional[str] = Field(
         default=None,
-        description="何の根拠として使ったか(例: '安全確認', 'テスト手順', '判断基準')"
+        description="What this reference is used for (e.g., 'safety check', 'test procedure', 'decision criteria')"
     )
 
 
 class SafetyCheckItem(BaseModel):
-    content: str = Field(..., description="作業前/作業中に必ず実施する安全確認項目")
+    content: str = Field(
+        ...,
+        description="Mandatory safety check to perform before or during diagnostics"
+    )
     guide_basis: GuideBasisItem = Field(
         ...,
-        description="この安全確認の根拠として参照したガイドchunk"
+        description="Guide chunk used as the basis for this safety check"
     )
 
 
@@ -28,6 +31,18 @@ class LocatingItem(BaseModel):
     purpose: str = Field(
         ...,
         description="この確認で何を切り分けたいか"
+    )
+    success_criteria: str = Field(
+        ...,
+        description="Observable condition under which this step is considered successful"
+    )
+    fail_criteria: str = Field(
+        ...,
+        description="Observable condition under which this step is considered failed"
+    )
+    next_step_rule: str = Field(
+        ...,
+        description="Rule describing what the next diagnostic step is based on success or failure (Location only)"
     )
     ask_back: str = Field(
         ...,
@@ -55,40 +70,76 @@ class LocatingOutput(BaseModel):
 
 
 # ---- Prompts ----
-LOCATING_SYSTEM_PROMPT = """
-あなたはネットワークトラブルシューティング支援システムの Locating Agent です。
+LOCATING_SYSTEM_PROMPT = """You are the Locating Agent for a network troubleshooting assistance system.
 
-目的:
-Identify の結果(事実/キーワード/media_hint)をもとに、
-「テストを使用して障害を切り分け、影響を受けるコンポーネントを絞り込む」ための
-論理的な順序付き確認手段(診断計画)を作成してください。
+Objective:
+Using the Identify results (facts / keywords / media_hint) and the retrieved manual excerpts,
+produce a logically ordered diagnostic plan (Location phase) that uses tests to isolate the fault and narrow down the impacted components.
 
-制約(重要):
-- 根本原因の推定や断定はしない。
-- 修正手順や設定変更の提案はしない。
-- すべて「確認手段」として順序付きで出す。
+Core principle (MUST follow):
+- Execute diagnostic tests in a logical sequence as described in the manual.
+- Verify the outcome of each step BEFORE moving to the next step.
+- Apply preventive precautions to protect system stability and safety.
 
-マニュアル利用(最重要):
-- 提供されたマニュアル抜粋の範囲に基づく内容のみを出す。
-- マニュアルに根拠がない確認手段(独自手順/独自テスト名/独自判断基準)は出さない。
-- すべての safety/checks には、参照した根拠(guide_basis: start_page/last_page/chapter)を必ず付ける。
-- guide_basis.note には、何の根拠として使ったかを短く書く(例: '安全確認', 'テスト手順', '判断基準')。
+Constraints (IMPORTANT):
+- Do NOT infer or conclude the root cause.
+- Do NOT propose corrective actions or configuration changes.
+- Do NOT provide repair or remediation steps.
+- Stay strictly within the Location phase.
 
-出力要件(必須):
-出力JSONは次の3項目を必ず含むこと。
-1) safety_checks: 安全確認の配列
-2) checks_in_order: テスト手段の配列
+Manual usage (CRITICAL):
+- Use ONLY content explicitly supported by the provided manual excerpts.
+- Do NOT include any test, method, or decision rule that is not supported by the manual.
+- Every safety check and diagnostic step MUST include a guide_basis reference
+  (start_page, last_page, chapter).
+- In guide_basis.note, briefly state how the manual excerpt is used
+  (e.g., "safety check", "test procedure", "decision criteria", "prerequisite").
 
-出力ルール:
-- 出力は JSON のみ (Pydanticスキーマ準拠)
-- 余計なキー、Markdown、説明文、前置きは禁止
+Reference integrity (NO GUESSING):
+- Use page/chapter values ONLY if they are explicitly present in manual.
+- If page or chapter information is not present, set the value to "unknown".
+- Never invent references.
+
+Required structure for EACH diagnostic step (LocatingItem):
+For every item in test_in_order, you MUST provide:
+- test_content: a concrete diagnostic or verification step from the manual
+- purpose: what this step is intended to isolate or verify
+- success_criteria: an observable PASS condition described or implied by the manual
+- fail_criteria: an observable FAIL condition described or implied by the manual
+- next_step_rule: what diagnostic step to perform next for SUCCESS vs FAILURE
+  (must remain within the Location phase)
+- ask_back: exactly what observation or result the user must report
+
+General rule for test follow-up (IMPORTANT):
+- Any diagnostic test mentioned in the manual that can PASS or FAIL
+  MUST include explicit success_criteria, fail_criteria, and next_step_rule.
+- If a test FAILS, the next_step_rule MUST describe further isolation
+  (e.g., narrowing to cable, port, adapter, or local segment),
+  not repair or configuration changes.
+- If a test PASSES, the next_step_rule MUST describe the next isolation step
+  or scope check supported by the manual.
+
+Scope isolation:
+- If the manual supports determining whether the issue affects
+  a single station, a small group, or a broader area,
+  include at least one step that performs this scope isolation.
+
+Output requirements (MANDATORY):
+Return JSON ONLY (must conform to the Pydantic schema) with exactly these fields:
+1) safety_checks: an array of mandatory safety check items
+2) test_in_order: an array of LocatingItem steps in logical order
+
+Output rules:
+- Output JSON only.
+- Do NOT include extra keys, Markdown, explanations, or prefaces.
+
 """
 
 LOCATING_USER_PROMPT = """
-以下が Identify Agent の出力(事実)です:
+The following are the Identify Agent outputs (facts):
 {facts}
 
-以下が検索されたマニュアル抜粋です:
+The following are the retrieved manual excerpts:
 {manual}
 """
 
@@ -96,6 +147,6 @@ LOCATING_USER_PROMPT = """
 create_locating_agent = Agent(
     name="Locating_Agent",
     instructions=LOCATING_SYSTEM_PROMPT,
-    model="gpt-4.1",
+    model="gpt-5.1",
     output_type=LocatingOutput,
 )
