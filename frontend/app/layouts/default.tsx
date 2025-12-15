@@ -11,6 +11,12 @@ export default function DefaultLayout() {
           >
             Network Engineering Assistant
           </Link>
+          <Link
+            to="/history"
+            className="text-base font-semibold tracking-tight text-foreground"
+          >
+            history
+          </Link>
         </div>
       </header>
       <main className="min-h-[calc(100vh-64px)] bg-muted/20">
