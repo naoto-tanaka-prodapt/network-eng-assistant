@@ -1,53 +1,51 @@
 from enum import Enum
 from agents import Agent, set_default_openai_key
 from pydantic import BaseModel, Field
+from typing import List
 from config import settings
 
-# Set API key
 set_default_openai_key(settings.OPENAI_API_KEY)
 
-class ComplaintType(str, Enum):
-    cant_connect = "cant_connect"
-    connection_drops = "connection_drops"
-    network_is_slow = "network_is_slow"
+class MediaHint(str, Enum):
+    physical = "physical"
+    switch = "switch"
+    network = "network"
+    unknown = "unknown"
 
 class IdentificationOutput(BaseModel):
-    problem_interpretation: str = Field(
+    facts: str = Field(
         ...,
-        description="アラーム・症状・エラーメッセージを整理した問題の解釈文"
+        description="入力から読み取れる事実（アラーム/症状/エラー/観測）を短文で列挙。推測は禁止。"
+    )
+    extracted_keywords: List[str] = Field(
+        ...,
+        description="検索に使えるキーワード（機器/ポート/プロトコル/手法）。重複なし。"
+    )
+    media_hint: MediaHint = Field(
+        ...,
+        description="physical/network/switch の当たり（入力に根拠が無ければ unknown）"
     )
 
-    complaint_type: ComplaintType = Field(
-        ...,
-        description="問題分類(cant_connect / connection_drops / network_is_slow)"
-    )
-
-IDENTIFY_SYSTEM_PROMPT = f"""
-あなたはネットワークトラブルシューティング支援システムのIdentify Agentです。
+IDENTIFY_SYSTEM_PROMPT = """
+あなたはネットワークトラブルシューティング支援システムの Identify Agent です。
 
 目的：
-ユーザから入力されたアラーム、症状、エラーメッセージを解釈し、「何が起きている問題なのか」を明確に定義してください。
-あなたの役割は「問題の特定（解釈）」までです。原因分析や対処方法の提案は行ってはいけません。
+ユーザ入力（アラーム/症状/エラーメッセージ）を解釈し、「何が起きている問題か」を定義する。
+あなたの役割は Identify(問題定義とキーワード抽出)まで。原因分析・対処提案・テスト手順の提案は禁止。
 
 実施内容：
-1. 入力文に含まれるアラーム、症状、エラーメッセージを読み取り、それらを整理して、簡潔で検証可能な問題の解釈文を作成する
-2. 問題を以下のいずれか1つに分類する
-   - cant_connect(接続できない)
-   - connection_drops(接続が切れる/不安定)
-   - network_is_slow(通信が遅い)
+1) 入力から読み取れる事実(facts)を列挙（推測しない）
+2) media_hintはphysical/network/switch のどこに問題かの当たり。入力に根拠が無ければ unknown。
+3) extracted_keywordsは入力された情報をもとに検索に使えるキーワードを抽出する。最大10個。
 
-注意事項：
-- 推測や断定はせず、入力内容から読み取れる範囲で整理すること
-- 分類が迷わしい場合は、最も近いものを選ぶこと
-
-出力ルール：
-- 出力は必ず JSON のみとする
-- 指定されたスキーマ以外のキーや説明文を含めない
+厳守：
+- 入力にないことは書かない。
+- 原因推定、対処提案、コマンド提示、詳細なテスト手順の提案は禁止
+- 出力は指定スキーマに一致する JSON のみ
 """
 
 IDENTIFY_USER_PROMPT = """
-以下がアラーム、症状、エラーメッセージです:
-
+以下がネットワークエンジニアが入力したアラーム、症状、エラーメッセージです:
 {error_message}
 """
 

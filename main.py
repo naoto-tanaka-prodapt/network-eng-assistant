@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from libs.db import get_session
 from sqlalchemy import text
 from config import settings
-from routers import agent_router
+from routers import agent_router, history_router
 # from auth import authenticate_admin, AdminAuthzMiddleware, AdminSessionMiddleware, delete_admin_session
 # from schemas import AdminLoginForm
 
@@ -19,6 +19,7 @@ init_logger(project="Prodapt", api_key=settings.BRAINTRUST_API_KEY)
 app = FastAPI()
 
 app.include_router(agent_router.router)
+app.include_router(history_router.router)
 
 
 

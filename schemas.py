@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from fastapi import File, UploadFile
 from pydantic import BaseModel, Field, field_validator
 
@@ -12,12 +12,12 @@ class IdentifyProblemForm(BaseModel):
 
 class LocatingProblemForm(BaseModel):
   session_id: str = Field(..., min_length=3)
-  problem_interpretation: str = Field(..., min_length=3)
-  complaint_type: str = Field(..., min_length=3)
+  facts: str = Field(..., min_length=3)
+  keywords: str = Field(..., min_length=3) # カンマ区切り
 
 class AnalyzeProblemForm(BaseModel):
   session_id: str = Field(..., min_length=3)
-  problem_interpretation: str = Field(..., min_length=3)
+  facts: str = Field(..., min_length=3)
   locating_response: str = Field(..., min_length=3)
 
 class ActionProblemForm(BaseModel):

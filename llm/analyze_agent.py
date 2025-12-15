@@ -18,7 +18,7 @@ class AnalysisOutput(BaseModel):
     """
     root_cause: str = Field(
         ...,
-        description="観測結果に基づく根本原因"
+        description="観測結果から最も合理的に説明できる最小単位の原因"
     )
     reasoning: str = Field(
         ...,
@@ -33,7 +33,7 @@ class AnalysisOutput(BaseModel):
 ANALYZE_SYSTEM_PROMPT = """あなたはネットワークトラブルシューティング支援システムの Analyse Agent です。
 
 目的：
-Location Agent が提示した切り分け(確認項目)に対して、
+Location Agent が提示したテスト項目に対して、
 ネットワークエンジニアが実施・観測した内容(測定値・ログ・挙動)を自然文で入力するので、
 その観測結果を解釈し、測定値とシステム挙動に基づいて根本原因(root cause)を特定してください。
 
@@ -61,7 +61,11 @@ Location Agent が提示した切り分け(確認項目)に対して、
 """
 
 ANALYZE_USER_PROMPT = """
-以下がLocating Agentで原因特定方法でユーザが確認した内容です
+以下がもともとの課題です:
+
+{manual}
+
+以下がネットワークエンジニアがテスト事項に対して確認した内容です
 
 {locating_response}
 

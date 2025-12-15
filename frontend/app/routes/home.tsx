@@ -6,20 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 
-type PhaseKey = "identification" | "localization" | "analysis" | "action" | "validation" | "conclusion";
+type PhaseKey = "identify" | "locating" | "analyze" | "action" | "validate";
+
+type MediaHint = "physical" | "switch" | "network" | "unknown";
 
 type IdentifyResponse = {
-  problem_interpretation: string;
-  complaint_type: string;
-};
-
-type LocatingCheck = {
-  type: "question_to_user" | "procedure" | string;
-  check_content: string;
-};
-
-type LocatingResponse = {
-  checks_in_order: LocatingCheck[];
+  facts: string;
+  extracted_keywords: string[];
+  media_hint: MediaHint;
 };
 
 type GuideBasis = {
@@ -27,6 +21,23 @@ type GuideBasis = {
   last_page: string;
   chapter: string;
   note?: string | null;
+};
+
+type SafetyCheck = {
+  content: string;
+  guide_basis: GuideBasis;
+};
+
+type LocatingTest = {
+  test_content: string;
+  purpose: string;
+  ask_back: string;
+  guide_basis: GuideBasis;
+};
+
+type LocatingResponse = {
+  safety_checks: SafetyCheck[];
+  test_in_order: LocatingTest[];
 };
 
 type AnalysisResponse = {
@@ -40,16 +51,6 @@ type ActionResponse = {
   safety_checks: string[];
   impact_assessment: string;
   rollback_plan: string[];
-  guide_basis: GuideBasis[];
-};
-
-type ValidateCheck = {
-  type: "question_to_user" | "procedure" | string;
-  check_content: string;
-};
-
-type ValidateResponse = {
-  validation_steps: ValidateCheck[];
   guide_basis: GuideBasis[];
 };
 
@@ -67,16 +68,15 @@ type ClientActionResponse = {
 };
 
 const PHASE_ENDPOINTS: Record<PhaseKey, string> = {
-  identification: "/api/identify",
-  localization: "/api/locating",
-  analysis: "/api/analyze",
+  identify: "/api/identify",
+  locating: "/api/locating",
+  analyze: "/api/analyze",
   action: "/api/action",
-  validation: "/api/validate",
-  conclusion: "/api/conclusion",
+  validate: "/api/conclusion",
 };
 
 const isPhaseKey = (value: string): value is PhaseKey =>
-  ["identification", "localization", "analysis", "action", "validation", "conclusion"].includes(value);
+  ["identify", "locating", "analyze", "action", "validate"].includes(value);
 
 const createSessionId = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -129,9 +129,9 @@ export default function Home({ actionData }: Route.ComponentProps) {
   const [locatingResult, setLocatingResult] = useState<LocatingResponse | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
   const [actionResult, setActionResult] = useState<ActionResponse | null>(null);
-  const [validateResult, setValidateResult] = useState<ValidateResponse | null>(null);
   const [conclusionResult, setConclusionResult] = useState<ConclusionResponse | null>(null);
   const [locatingResponseInput, setLocatingResponseInput] = useState<string>("");
+  const [validationChoice, setValidationChoice] = useState<"resolved" | "unresolved" | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -153,27 +153,25 @@ export default function Home({ actionData }: Route.ComponentProps) {
     if (!actionData.phase) return;
 
     switch (actionData.phase) {
-      case "identification":
+      case "identify":
         setIdentifyResult(actionData.data as IdentifyResponse);
         setLocatingResult(null);
         setAnalysisResult(null);
         setActionResult(null);
-        setValidateResult(null);
         setConclusionResult(null);
+        setLocatingResponseInput("");
+        setValidationChoice(null);
         break;
-      case "localization":
+      case "locating":
         setLocatingResult(actionData.data as LocatingResponse);
         break;
-      case "analysis":
+      case "analyze":
         setAnalysisResult(actionData.data as AnalysisResponse);
         break;
       case "action":
         setActionResult(actionData.data as ActionResponse);
         break;
-      case "validation":
-        setValidateResult(actionData.data as ValidateResponse);
-        break;
-      case "conclusion":
+      case "validate":
         setConclusionResult(actionData.data as ConclusionResponse);
         break;
       default:
@@ -183,14 +181,30 @@ export default function Home({ actionData }: Route.ComponentProps) {
 
   const resetSession = () => {
     setSessionId(createSessionId());
+    setQuery("");
     setIdentifyResult(null);
     setLocatingResult(null);
     setAnalysisResult(null);
     setActionResult(null);
-    setValidateResult(null);
     setConclusionResult(null);
+    setLocatingResponseInput("");
+    setValidationChoice(null);
     setErrorMessage(null);
   };
+
+  const restartWithSameSession = () => {
+    setIdentifyResult(null);
+    setLocatingResult(null);
+    setAnalysisResult(null);
+    setActionResult(null);
+    setConclusionResult(null);
+    setLocatingResponseInput("");
+    setValidationChoice(null);
+    setErrorMessage(null);
+  };
+
+  const extractedKeywords = identifyResult?.extracted_keywords ?? [];
+  const keywordsForPayload = extractedKeywords.join(", ");
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -222,12 +236,12 @@ export default function Home({ actionData }: Route.ComponentProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Step 1. Identification</CardTitle>
-          <CardDescription>Take the raw incident input and turn it into a normalized interpretation.</CardDescription>
+          <CardTitle>Step 1. Identify</CardTitle>
+          <CardDescription>Normalize the incident, understand the input, and extract keywords.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
-            <input type="hidden" name="phase" value="identification" />
+            <input type="hidden" name="phase" value="identify" />
             <input type="hidden" name="session_id" value={sessionId} />
             <div className="space-y-2">
               <Label htmlFor="query">Incident details</Label>
@@ -241,15 +255,32 @@ export default function Home({ actionData }: Route.ComponentProps) {
               />
             </div>
             <Button type="submit" variant="default" className="w-full sm:w-fit" disabled={isSubmitting || !sessionId}>
-              {submittingPhase === "identification" ? "Identifying..." : "Run identification"}
+              {submittingPhase === "identify" ? "Identifying..." : "Run identify"}
             </Button>
           </Form>
 
           {identifyResult && (
-            <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Interpretation</p>
-              <p className="text-sm text-foreground">{identifyResult.problem_interpretation}</p>
-              <p className="text-xs text-muted-foreground">Complaint type: {identifyResult.complaint_type}</p>
+            <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Facts</p>
+                <p>{identifyResult.facts}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Extracted keywords</p>
+                <div className="flex flex-wrap gap-2">
+                  {identifyResult.extracted_keywords.map((keyword) => (
+                    <span
+                      key={keyword}
+                      className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold uppercase text-slate-700"
+                    >
+                      {keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Media hint: <span className="font-semibold text-foreground">{identifyResult.media_hint}</span>
+              </p>
             </div>
           )}
         </CardContent>
@@ -257,38 +288,57 @@ export default function Home({ actionData }: Route.ComponentProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Step 2. Localization</CardTitle>
-          <CardDescription>Divide-and-conquer checks to narrow the fault domain.</CardDescription>
+          <CardTitle>Step 2. Locating</CardTitle>
+          <CardDescription>Divide-and-conquer tests and safety checks to narrow the fault domain.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
-            <input type="hidden" name="phase" value="localization" />
+            <input type="hidden" name="phase" value="locating" />
             <input type="hidden" name="session_id" value={sessionId} />
-            <input type="hidden" name="problem_interpretation" value={identifyResult?.problem_interpretation ?? ""} />
-            <input type="hidden" name="complaint_type" value={identifyResult?.complaint_type ?? ""} />
+            <input type="hidden" name="facts" value={identifyResult?.facts ?? ""} />
+            <input type="hidden" name="keywords" value={keywordsForPayload} />
             <Button
               type="submit"
               variant="default"
               className="w-full sm:w-fit"
               disabled={!identifyResult || isSubmitting || !sessionId}
             >
-              {submittingPhase === "localization" ? "Generating checks..." : "Run localization"}
+              {submittingPhase === "locating" ? "Generating checks..." : "Run locating"}
             </Button>
           </Form>
 
           {locatingResult && (
-            <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Checks</p>
-              <ol className="space-y-2 text-sm text-foreground">
-                {locatingResult.checks_in_order.map((check, index) => (
-                  <li key={`${check.check_content}-${index}`} className="flex items-start gap-2">
-                    <span className="mt-0.5 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] uppercase text-slate-700">
-                      {check.type}
-                    </span>
-                    <span>{check.check_content}</span>
-                  </li>
-                ))}
-              </ol>
+            <div className="space-y-4 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Safety checks</p>
+                <ul className="space-y-2">
+                  {locatingResult.safety_checks.map((item, index) => (
+                    <li key={`${item.content}-${index}`} className="rounded bg-white px-2 py-1">
+                      <p>{item.content}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
+                        {item.guide_basis.note ? ` (${item.guide_basis.note})` : ""}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Tests in order</p>
+                <ol className="space-y-2">
+                  {locatingResult.test_in_order.map((item, index) => (
+                    <li key={`${item.test_content}-${index}`} className="rounded bg-white px-3 py-2">
+                      <p className="font-semibold">{item.test_content}</p>
+                      <p className="text-foreground/80">{item.purpose}</p>
+                      <p className="text-xs text-muted-foreground">Ask back: {item.ask_back}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
+                        {item.guide_basis.note ? ` (${item.guide_basis.note})` : ""}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
             </div>
           )}
         </CardContent>
@@ -296,22 +346,22 @@ export default function Home({ actionData }: Route.ComponentProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Step 3. Analysis</CardTitle>
-          <CardDescription>Turn observations into a single root cause with guide citations.</CardDescription>
+          <CardTitle>Step 3. Analyze</CardTitle>
+          <CardDescription>Run tests, record observations, and estimate the root cause.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
-            <input type="hidden" name="phase" value="analysis" />
+            <input type="hidden" name="phase" value="analyze" />
             <input type="hidden" name="session_id" value={sessionId} />
-            <input type="hidden" name="problem_interpretation" value={identifyResult?.problem_interpretation ?? ""} />
+            <input type="hidden" name="facts" value={identifyResult?.facts ?? ""} />
             <div className="space-y-2">
-              <Label htmlFor="locating_response">Results from localization checks</Label>
+              <Label htmlFor="locating_response">Results from locating tests</Label>
               <Textarea
                 id="locating_response"
                 name="locating_response"
                 value={locatingResponseInput}
                 onChange={(event) => setLocatingResponseInput(event.target.value)}
-                placeholder="Enter what you observed when you ran the localization checks (measurements, behavior, error messages)."
+                placeholder="Enter what you observed when you ran the locating checks (measurements, behavior, error messages)."
                 rows={4}
               />
             </div>
@@ -321,7 +371,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
               className="w-full sm:w-fit"
               disabled={!locatingResult || !locatingResponseInput.trim() || isSubmitting || !sessionId}
             >
-              {submittingPhase === "analysis" ? "Analyzing..." : "Run analysis"}
+              {submittingPhase === "analyze" ? "Analyzing..." : "Run analyze"}
             </Button>
           </Form>
 
@@ -336,7 +386,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
                   {analysisResult.guide_basis.map((item, index) => (
                     <li key={`${item.chapter}-${index}`} className="rounded bg-white px-2 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
-                      {item.note ? ` — ${item.note}` : ""}
+                      {item.note ? ` (${item.note})` : ""}
                     </li>
                   ))}
                 </ul>
@@ -349,7 +399,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
       <Card>
         <CardHeader>
           <CardTitle>Step 4. Action</CardTitle>
-          <CardDescription>Safety-first corrective actions with rollback and impact callouts.</CardDescription>
+          <CardDescription>Suggest safe corrective actions with rollback and impact callouts.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form method="post" className="space-y-3">
@@ -402,7 +452,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
                   {actionResult.guide_basis.map((item, index) => (
                     <li key={`${item.chapter}-${index}`} className="rounded bg-white px-2 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
-                      {item.note ? ` — ${item.note}` : ""}
+                      {item.note ? ` (${item.note})` : ""}
                     </li>
                   ))}
                 </ul>
@@ -414,74 +464,66 @@ export default function Home({ actionData }: Route.ComponentProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Step 5. Validation</CardTitle>
-          <CardDescription>Verify resolution and check for secondary issues.</CardDescription>
+          <CardTitle>Step 5. Validate & Document</CardTitle>
+          <CardDescription>
+            Confirm unresolved issues or secondary impact. If clear, create and save docs; otherwise restart at Step 1 with
+            the same session_id.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Form method="post" className="space-y-3">
-            <input type="hidden" name="phase" value="validation" />
-            <input type="hidden" name="session_id" value={sessionId} />
-            <input type="hidden" name="problem_interpretation" value={identifyResult?.problem_interpretation ?? ""} />
-            <input type="hidden" name="root_cause" value={analysisResult?.root_cause ?? ""} />
-            <Button
-              type="submit"
-              variant="default"
-              className="w-full sm:w-fit"
-              disabled={!actionResult || isSubmitting || !sessionId}
-            >
-              {submittingPhase === "validation" ? "Validating..." : "Run validation"}
-            </Button>
-          </Form>
-
-          {validateResult && (
-            <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Validation steps</p>
-                <ol className="space-y-1">
-                  {validateResult.validation_steps.map((item, index) => (
-                    <li key={`${item.check_content}-${index}`} className="flex items-start gap-2">
-                      <span className="mt-0.5 rounded-full bg-slate-200 px-2 py-0.5 text-[11px] uppercase text-slate-700">
-                        {item.type}
-                      </span>
-                      <span>{item.check_content}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Guide basis</p>
-                <ul className="space-y-1 text-xs">
-                  {validateResult.guide_basis.map((item, index) => (
-                    <li key={`${item.chapter}-${index}`} className="rounded bg-white px-2 py-1">
-                      {item.chapter} p.{item.start_page}-{item.last_page}
-                      {item.note ? ` — ${item.note}` : ""}
-                    </li>
-                  ))}
-                </ul>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Select the current state</Label>
+              <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
+                <label className="flex items-start gap-2">
+                  <input
+                    type="radio"
+                    name="validationChoice"
+                    value="resolved"
+                    checked={validationChoice === "resolved"}
+                    onChange={() => setValidationChoice("resolved")}
+                    className="mt-1"
+                  />
+                  <span>Issue resolved and no secondary impact</span>
+                </label>
+                <label className="flex items-start gap-2">
+                  <input
+                    type="radio"
+                    name="validationChoice"
+                    value="unresolved"
+                    checked={validationChoice === "unresolved"}
+                    onChange={() => setValidationChoice("unresolved")}
+                    className="mt-1"
+                  />
+                  <span>Unresolved or secondary impact - go back to Step 1 with the same session_id</span>
+                </label>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Step 6. Documentation & Feedback</CardTitle>
-          <CardDescription>Summarize learnings for reuse and user-facing comms.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Form method="post" className="space-y-3">
-            <input type="hidden" name="phase" value="conclusion" />
-            <input type="hidden" name="session_id" value={sessionId} />
-            <Button
-              type="submit"
-              variant="default"
-              className="w-full sm:w-fit"
-              disabled={!validateResult || isSubmitting || !sessionId}
-            >
-              {submittingPhase === "conclusion" ? "Documenting..." : "Run conclusion"}
-            </Button>
-          </Form>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={restartWithSameSession}
+                disabled={validationChoice !== "unresolved" || isSubmitting}
+              >
+                Return to Step 1
+              </Button>
+
+              <Form method="post" className="flex flex-wrap gap-3">
+                <input type="hidden" name="phase" value="validate" />
+                <input type="hidden" name="session_id" value={sessionId} />
+                <Button
+                  type="submit"
+                  variant="default"
+                  className="w-full sm:w-fit"
+                  disabled={validationChoice !== "resolved" || !actionResult || isSubmitting || !sessionId}
+                >
+                  {submittingPhase === "validate" ? "Creating doc..." : "Create & save doc"}
+                </Button>
+              </Form>
+            </div>
+          </div>
 
           {conclusionResult && (
             <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
