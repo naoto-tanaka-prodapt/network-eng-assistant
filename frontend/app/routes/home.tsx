@@ -270,7 +270,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Media hint: <span className="font-semibold text-foreground">{identifyResult.media_hint}</span>
+                Category: <span className="font-semibold text-foreground">{identifyResult.media_hint}</span>
               </p>
             </div>
           )}
@@ -389,7 +389,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
                   {analysisResult.guide_basis.map((item, index) => (
                     <li key={`${item.chapter}-${index}`} className="rounded bg-white px-2 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
-                      {item.note ? ` (${item.note})` : ""}
                     </li>
                   ))}
                 </ul>
@@ -455,7 +454,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
                   {actionResult.guide_basis.map((item, index) => (
                     <li key={`${item.chapter}-${index}`} className="rounded bg-white px-2 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
-                      {item.note ? ` (${item.note})` : ""}
                     </li>
                   ))}
                 </ul>
@@ -528,20 +526,8 @@ export default function Home({ actionData }: Route.ComponentProps) {
           {conclusionResult && (
             <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
               <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Symptom signature</p>
-                <p>{conclusionResult.symptom}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Resolution</p>
-                <p>{conclusionResult.resolution}</p>
-              </div>
-              <div>
                 <p className="text-xs font-semibold uppercase text-muted-foreground">User feedback</p>
                 <p>{conclusionResult.user_feedback}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Guide</p>
-                <p>{conclusionResult.guide}</p>
               </div>
             </div>
           )}

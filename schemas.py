@@ -1,7 +1,4 @@
-from typing import List, Optional
-from fastapi import File, UploadFile
-from pydantic import BaseModel, Field, field_validator
-
+from pydantic import BaseModel, Field
 
 class CreateProcedureForm(BaseModel):
   query: str = Field(..., min_length=3)
@@ -14,7 +11,7 @@ class LocatingProblemForm(BaseModel):
   session_id: str = Field(..., min_length=3)
   facts: str = Field(..., min_length=3)
   media_hint: str = Field(...)
-  keywords: str = Field(..., min_length=3) # カンマ区切り
+  keywords: str = Field(..., min_length=3)
 
 class AnalyzeProblemForm(BaseModel):
   session_id: str = Field(..., min_length=3)

@@ -213,3 +213,4 @@ qdrant_store
 *.db
 *.db-shm
 *.db-wal
+*.csv
