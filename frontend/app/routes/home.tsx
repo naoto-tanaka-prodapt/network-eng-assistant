@@ -132,7 +132,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
   const [actionResult, setActionResult] = useState<ActionResponse | null>(null);
   const [conclusionResult, setConclusionResult] = useState<ConclusionResponse | null>(null);
   const [locatingResponseInput, setLocatingResponseInput] = useState<string>("");
-  const [validationChoice, setValidationChoice] = useState<"resolved" | "unresolved" | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -161,7 +160,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
         setActionResult(null);
         setConclusionResult(null);
         setLocatingResponseInput("");
-        setValidationChoice(null);
         break;
       case "locating":
         setLocatingResult(actionData.data as LocatingResponse);
@@ -189,7 +187,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
     setActionResult(null);
     setConclusionResult(null);
     setLocatingResponseInput("");
-    setValidationChoice(null);
     setErrorMessage(null);
   };
 
@@ -200,7 +197,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
     setActionResult(null);
     setConclusionResult(null);
     setLocatingResponseInput("");
-    setValidationChoice(null);
     setErrorMessage(null);
   };
 
@@ -210,20 +206,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
       <div className="flex flex-wrap items-start justify-between">
-        <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-          {isSubmitting && submittingPhase && (
-            <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">
-              <span className="h-2 w-2 rounded-full bg-sky-500" aria-hidden />
-              {submittingPhase} is running...
-            </span>
-          )}
-          {errorMessage && (
-            <span className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-800">
-              <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
-              {errorMessage}
-            </span>
-          )}
-        </div>
         <Button variant="default" size="sm" onClick={resetSession} disabled={isSubmitting} className="ml-auto">
           New session
         </Button>
@@ -505,64 +487,37 @@ export default function Home({ actionData }: Route.ComponentProps) {
           <CardDescription>Ensuring no secondary issues remain</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="space-y-4">
-            <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white/90 p-4 shadow-sm">
-              <Label>Select the current state</Label>
-              <div className="space-y-3 text-sm text-foreground">
-                <label className="flex items-start gap-2">
-                  <input
-                    type="radio"
-                    name="validationChoice"
-                    value="resolved"
-                    checked={validationChoice === "resolved"}
-                    onChange={() => setValidationChoice("resolved")}
-                    className="mt-1"
-                  />
-                  <span>Issue resolved and no secondary impact</span>
-                </label>
-                <label className="flex items-start gap-2">
-                  <input
-                    type="radio"
-                    name="validationChoice"
-                    value="unresolved"
-                    checked={validationChoice === "unresolved"}
-                    onChange={() => setValidationChoice("unresolved")}
-                    className="mt-1"
-                  />
-                  <span className="leading-6">Unresolved or secondary impact - go back to Step 1 with the same session_id</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
                 onClick={restartWithSameSession}
-                disabled={validationChoice !== "unresolved" || isSubmitting}
+                disabled={!actionResult || isSubmitting || !sessionId}
+                className="h-auto w-full flex-1 flex-col items-start justify-start px-4 py-3 text-left"
               >
-                Return to Step 1
+                <span className="block text-sm font-semibold text-slate-900">Secondary impact detected</span>
+                <span className="block text-xs text-slate-600">Return to Step 1 with the same session_id</span>
               </Button>
 
-              <Form method="post" className="flex flex-wrap gap-3">
+              <Form method="post" className="w-full flex-1">
                 <input type="hidden" name="phase" value="validate" />
                 <input type="hidden" name="session_id" value={sessionId} />
                 <Button
                   type="submit"
                   variant="default"
-                  className="w-full sm:w-fit"
-                  disabled={validationChoice !== "resolved" || !actionResult || isSubmitting || !sessionId}
+                  className="h-auto w-full flex-1 flex-col items-start justify-start px-4 py-3 text-left"
+                  disabled={!actionResult || isSubmitting || !sessionId}
                 >
-                  {submittingPhase === "validate" ? "Creating doc..." : "Create & save doc"}
+                  <span className="block text-sm font-semibold text-white">No secondary impact</span>
+                  <span className="block text-xs text-white/80">Create & save doc</span>
                 </Button>
               </Form>
             </div>
-          </div>
 
           {conclusionResult && (
             <div className="space-y-2 rounded-xl border border-slate-200/70 bg-white/90 p-4 text-sm text-foreground shadow-sm">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">User feedback</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Copy below for User feedback</p>
                 <p className="leading-6 text-slate-900">{conclusionResult.user_feedback}</p>
               </div>
             </div>
