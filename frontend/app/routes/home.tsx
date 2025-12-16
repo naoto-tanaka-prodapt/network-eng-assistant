@@ -316,17 +316,19 @@ export default function Home({ actionData }: Route.ComponentProps) {
                   {locatingResult.safety_checks.map((item, index) => (
                     <li
                       key={`${item.content}-${index}`}
-                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm"
+                      className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm"
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
                           Check {index + 1}
                         </span>
                       </div>
-                      <p className="font-semibold text-amber-900">{item.content}</p>
-                      <p className="text-[11px] font-medium text-amber-900/80">
-                        {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
-                      </p>
+                      <p className="leading-6 text-amber-900">{item.content}</p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <span className="rounded-md bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-900">
+                          {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
+                        </span>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -342,9 +344,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
                       <div className="flex items-start justify-between gap-2">
                         <p className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
                           Step {index + 1}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
                         </p>
                       </div>
                       <div className="space-y-1">
@@ -364,6 +363,9 @@ export default function Home({ actionData }: Route.ComponentProps) {
                           <p className="leading-6 text-slate-800">{item.proceed_constraint}</p>
                         </div>
                       </div>
+                      <span className="rounded-md font-semibold text-[11px] border border-indigo-100 bg-indigo-50 px-3 py-1">
+                        {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
+                      </span>
                     </li>
                   ))}
                 </ol>
@@ -413,7 +415,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Guide basis</p>
                 <ul className="flex flex-wrap gap-2 text-xs">
                   {analysisResult.guide_basis.map((item, index) => (
-                    <li key={`${item.chapter}-${index}`} className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-1">
+                    <li key={`${item.chapter}-${index}`} className="rounded-md font-semibold text-[11px] border border-indigo-100 bg-indigo-50 px-3 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
                     </li>
                   ))}
@@ -447,6 +449,24 @@ export default function Home({ actionData }: Route.ComponentProps) {
           {actionResult && (
             <div className="space-y-4 rounded-xl border border-slate-200/70 bg-white/90 p-4 text-sm text-foreground shadow-sm">
               <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Safety checks</p>
+                <ul className="space-y-3">
+                  {actionResult.safety_checks.map((step, index) => (
+                    <li
+                      key={`${step}-${index}`}
+                      className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+                          Check {index + 1}
+                        </span>
+                      </div>
+                      <p className="leading-6">{step}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Fix steps</p>
                 <ol className="space-y-3">
                   {actionResult.fix_steps.map((step, index) => (
@@ -465,46 +485,10 @@ export default function Home({ actionData }: Route.ComponentProps) {
                 </ol>
               </div>
               <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Safety checks</p>
-                <ul className="space-y-3">
-                  {actionResult.safety_checks.map((step, index) => (
-                    <li
-                      key={`${step}-${index}`}
-                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 shadow-sm"
-                    >
-                      <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Check {index + 1}</span>
-                      <p className="leading-6">{step}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Impact assessment</p>
-                <p className="leading-6 text-slate-900">{actionResult.impact_assessment}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Rollback plan</p>
-                <ol className="space-y-3">
-                  {actionResult.rollback_plan.map((step, index) => (
-                    <li
-                      key={`${step}-${index}`}
-                      className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm"
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
-                          Step {index + 1}
-                        </p>
-                      </div>
-                      <p className="leading-6 text-slate-900">{step}</p>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-              <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Guide basis</p>
                 <ul className="flex flex-wrap gap-2 text-xs">
                   {actionResult.guide_basis.map((item, index) => (
-                    <li key={`${item.chapter}-${index}`} className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-1">
+                    <li key={`${item.chapter}-${index}`} className="rounded-md font-semibold text-[11px] border border-indigo-100 bg-indigo-50 px-3 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
                     </li>
                   ))}
