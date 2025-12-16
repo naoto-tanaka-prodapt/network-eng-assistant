@@ -147,6 +147,6 @@ The following are the retrieved manual excerpts:
 create_locating_agent = Agent(
     name="Locating_Agent",
     instructions=LOCATING_SYSTEM_PROMPT,
-    model="gpt-5.1",
+    model="gpt-5.2",
     output_type=LocatingOutput,
 )

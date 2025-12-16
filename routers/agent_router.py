@@ -33,8 +33,9 @@ async def locating_problem(
 
     manuals = get_manual_documents(
         query=search_query,
-        k=10,
-        vector_store=vector_store
+        k=5,
+        vector_store=vector_store,
+        part=request.media_hint
     )
 
     manual_context = format_context_from_docs(manuals)

@@ -290,6 +290,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
             <input type="hidden" name="session_id" value={sessionId} />
             <input type="hidden" name="facts" value={identifyResult?.facts ?? ""} />
             <input type="hidden" name="keywords" value={keywordsForPayload} />
+            <input type="hidden" name="media_hint" value={identifyResult?.media_hint ?? "unknown"} />
             <Button
               type="submit"
               variant="default"

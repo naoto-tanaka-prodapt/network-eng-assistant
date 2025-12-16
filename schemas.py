@@ -13,6 +13,7 @@ class IdentifyProblemForm(BaseModel):
 class LocatingProblemForm(BaseModel):
   session_id: str = Field(..., min_length=3)
   facts: str = Field(..., min_length=3)
+  media_hint: str = Field(...)
   keywords: str = Field(..., min_length=3) # カンマ区切り
 
 class AnalyzeProblemForm(BaseModel):

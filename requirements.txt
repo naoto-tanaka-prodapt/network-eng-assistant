@@ -20,3 +20,4 @@ openai-agents==0.6.2
 braintrust[openai-agents]==0.3.12
 braintrust-langchain==0.1.5
 fastmcp
+certifi

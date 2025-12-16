@@ -9,7 +9,7 @@ export default function DefaultLayout() {
             to="/"
             className="text-base font-semibold tracking-tight text-foreground"
           >
-            Network Engineering Assistant
+            Network Incident Helper
           </Link>
           <Link
             to="/history"

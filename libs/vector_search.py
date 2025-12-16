@@ -1,10 +1,10 @@
 # from functools import lru_cache
 from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
-from qdrant_client import QdrantClient
 from config import settings
 from qdrant_client.http.models import Distance, VectorParams, Filter, FieldCondition, MatchValue
 from langchain_core.documents import Document
+from qdrant_client.http import models as qm
 
 COLLECTION_NAME = "frontline_lan_metadata"
 
@@ -32,10 +32,38 @@ def get_vector_store():
 #     finally:
 #         client.close()
 
-def get_manual_documents(query: str, k: int, vector_store: QdrantVectorStore):
-    retriever = vector_store.as_retriever(search_kwargs={"k": k})
-    manuals = retriever.invoke(query)
-    return manuals
+def get_manual_documents(query: str, k: int, vector_store: QdrantVectorStore, part: str | None = None):
+    search_kwargs = {"k": k}
+    if part and part != "unknown":
+        search_kwargs["filter"] = qm.Filter(
+        should=[
+            qm.FieldCondition(
+                key="metadata.part",
+                match=qm.MatchValue(value=part),
+            )
+        ]
+    )
+
+    retriever = vector_store.as_retriever(
+        search_type="mmr",
+        search_kwargs=search_kwargs
+    )
+    # results = vector_store.similarity_search(
+    #     query=query,
+    #     k=3,
+    #     filter=models.Filter(
+    #         should=[
+    #             models.FieldCondition(
+    #                 key="metadata.part",
+    #                 match=models.MatchValue(
+    #                     value=part
+    #                 ),
+    #             ),
+    #         ]
+    #     ),
+    # )
+    return retriever.invoke(query)
+
 
 def format_context_from_docs(docs):
     blocks = []
@@ -46,7 +74,7 @@ def format_context_from_docs(docs):
             "----\n"
             f"chunk_id: {m.get('chunk_id')}\n"
             f"part: {m.get('part')}\n"
-            f"section_path: {m.get('section_path')}\n"
+            f"section_title: {m.get('section_title')}\n"
             f"page_start: {m.get('page_start')}  page_end: {m.get('page_end')}\n"
             f"text:\n{raw}\n"
         )
