@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Form, useNavigation } from "react-router";
 import type { Route } from "../+types/root";
 import { Button } from "~/components/ui/button";
@@ -59,6 +59,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
   const [actionResult, setActionResult] = useState(null);
   const [conclusionResult, setConclusionResult] = useState(null);
   const [locatingResponseInput, setLocatingResponseInput] = useState("");
+  const step1Ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!actionData) return;
@@ -101,13 +102,8 @@ export default function Home({ actionData }: Route.ComponentProps) {
     setLocatingResponseInput("");
   };
 
-  const restartWithSameSession = () => {
-    setIdentifyResult(null);
-    setLocatingResult(null);
-    setAnalysisResult(null);
-    setActionResult(null);
-    setConclusionResult(null);
-    setLocatingResponseInput("");
+  const scrollToStep1 = () => {
+    step1Ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const extractedKeywords = identifyResult?.extracted_keywords ?? [];
@@ -121,62 +117,64 @@ export default function Home({ actionData }: Route.ComponentProps) {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Step 1. Identify</CardTitle>
-          <CardDescription>Interpreting alarms, symptoms, and error reports</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <Form method="post" className="space-y-3">
-            <input type="hidden" name="phase" value="identify" />
-            <input type="hidden" name="session_id" value={sessionId} />
-            <div className="space-y-2">
-              <Label htmlFor="query">Incident details</Label>
-              <Textarea
-                id="query"
-                name="query"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Include alarms, error messages, symptoms."
-                rows={4}
-              />
-            </div>
-            <Button type="submit" variant="default" className="w-full sm:w-fit" disabled={isSubmitting || !sessionId}>
-              {submittingPhase === "identify" ? "Running..." : "Run identify"}
-            </Button>
-          </Form>
+      <div ref={step1Ref}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Step 1. Identify</CardTitle>
+            <CardDescription>Interpreting alarms, symptoms, and error reports</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <Form method="post" className="space-y-3">
+              <input type="hidden" name="phase" value="identify" />
+              <input type="hidden" name="session_id" value={sessionId} />
+              <div className="space-y-2">
+                <Label htmlFor="query">Incident details</Label>
+                <Textarea
+                  id="query"
+                  name="query"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Include alarms, error messages, symptoms."
+                  rows={4}
+                />
+              </div>
+              <Button type="submit" variant="default" className="w-full sm:w-fit" disabled={isSubmitting || !sessionId}>
+                {submittingPhase === "identify" ? "Running..." : "Run identify"}
+              </Button>
+            </Form>
 
-          {identifyResult && (
-            <div className="space-y-3 rounded-xl border border-slate-200/70 bg-white/80 p-4 text-sm text-foreground shadow-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Facts</p>
-              </div>
-              <p className="leading-6 text-slate-800">{identifyResult.facts}</p>
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Extracted keywords</p>
-                <div className="flex flex-wrap gap-2">
-                  {identifyResult.extracted_keywords.map((keyword) => (
-                    <span
-                      key={keyword}
-                      className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase text-indigo-800 shadow-sm"
-                    >
-                      {keyword}
+            {identifyResult && (
+              <div className="space-y-3 rounded-xl border border-slate-200/70 bg-white/80 p-4 text-sm text-foreground shadow-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Facts</p>
+                </div>
+                <p className="leading-6 text-slate-800">{identifyResult.facts}</p>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Extracted keywords</p>
+                  <div className="flex flex-wrap gap-2">
+                    {identifyResult.extracted_keywords.map((keyword) => (
+                      <span
+                        key={keyword}
+                        className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase text-indigo-800 shadow-sm"
+                      >
+                        {keyword}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Category</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-indigo-100 text-indigo-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
+                      {identifyResult.media_hint}
                     </span>
-                  ))}
+                  </div>
                 </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Category</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-full bg-indigo-100 text-indigo-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
-                    {identifyResult.media_hint}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
@@ -401,7 +399,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={restartWithSameSession}
+                onClick={scrollToStep1}
                 disabled={!actionResult || isSubmitting || !sessionId}
                 className="h-auto w-full flex-1 flex-col items-start justify-start px-4 py-3 text-left"
               >

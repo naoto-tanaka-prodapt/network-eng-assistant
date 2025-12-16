@@ -19,16 +19,6 @@ class ActionOutput(BaseModel):
         description="Safety checks that must be performed before and during work (mandatory)."
     )
 
-    impact_assessment: str = Field(
-        ...,
-        description="Assessment of impact scope, severity, and timing (mandatory)."
-    )
-
-    rollback_plan: List[str] = Field(
-        ...,
-        description="Steps to restore the system if the action fails (mandatory)."
-    )
-
     guide_basis: List[GuideBasisItem] = Field(
         ...,
         description="Guide chunks referenced as evidence for this output (at least one)."
@@ -53,9 +43,7 @@ Output requirements (MANDATORY):
 The output JSON must include all five items below; none may be empty.
 1) fix_steps: ordered corrective action steps
 2) safety_checks: safety checks before/during work (required)
-3) impact_assessment: impact assessment (required)
-4) rollback_plan: steps to restore the system if the action fails (required)
-5) guide_basis: list of guide excerpts used as evidence (at least one)
+3) guide_basis: list of guide excerpts used as evidence (at least one)
 
 How to provide evidence:
 - guide_basis must include start_page / last_page / chapter for the referenced guide excerpt.
@@ -80,6 +68,6 @@ Below are the retrieved manual excerpts:
 create_action_agent = Agent(
     name="Action_Agent",
     instructions=ACTION_SYSTEM_PROMPT,
-    model="gpt-4.1",
+    model="gpt-5.1",
     output_type=ActionOutput,
 )

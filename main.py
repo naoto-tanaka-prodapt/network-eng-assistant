@@ -1,20 +1,13 @@
-import os
-
 from agents import set_default_openai_key, set_trace_processors
 from braintrust import init_logger
 from config import settings
-from typing import Annotated
-from fastapi import FastAPI, Form, HTTPException, Request, Response
-# from routers import job_application_router, job_board_router, llm_router, job_post_router
-# from fastapi.responses import FileResponse
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from libs.db import get_session
 from sqlalchemy import text
 from config import settings
 from braintrust.wrappers.openai import BraintrustTracingProcessor
 from routers import agent_router, history_router
-# from auth import authenticate_admin, AdminAuthzMiddleware, AdminSessionMiddleware, delete_admin_session
-# from schemas import AdminLoginForm
 
 # init_logger(project="Neteng", api_key=settings.BRAINTRUST_API_KEY)
 # set_trace_processors([BraintrustTracingProcessor(init_logger("Neteng", api_key=settings.BRAINTRUST_API_KEY))])
@@ -36,31 +29,6 @@ async def health():
   except Exception as e:
       print(f"Failed to connect: {e}")
       return {"status": "ng"}
-  
-# ## local file directory
-# if not settings.PRODUCTION:
-#   app.mount("/uploads", StaticFiles(directory="uploads"))
-
-# ## Auth
-# @app.post("/api/admin-login")
-# async def admin_login(response: Response, admin_login_form: Annotated[AdminLoginForm, Form()]):
-#    auth_response = authenticate_admin(admin_login_form.username, admin_login_form.password)
-#    if auth_response is not None:
-#       secure = settings.PRODUCTION
-#       response.set_cookie(key="admin_session", value=auth_response, httponly=True, secure=secure, samesite="Lax")
-#       return {}
-#    else:
-#       raise HTTPException(status_code="403")
-   
-# @app.get("/api/me")
-# async def me(req: Request):
-#   return {"is_admin": req.state.is_admin}
-
-# @app.post("/api/admin-logout")
-# async def admin_logout(request: Request, response: Response):
-#   delete_admin_session(request.cookies.get("admin_session"))
-#   secure = settings.PRODUCTION
-#   response.delete_cookie(key="admin_session", httponly=True, secure=secure, samesite="LaX")
   
 ## For UI
 app.mount(
