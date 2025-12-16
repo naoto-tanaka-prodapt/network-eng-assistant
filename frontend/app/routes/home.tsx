@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Form, useNavigation } from "react-router";
 import type { Route } from "../+types/root";
 import { Button } from "~/components/ui/button";
@@ -6,69 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 
-type PhaseKey = "identify" | "locating" | "analyze" | "action" | "validate";
-
-type MediaHint = "physical" | "switch" | "network" | "unknown";
-
-type IdentifyResponse = {
-  facts: string;
-  extracted_keywords: string[];
-  media_hint: MediaHint;
-};
-
-type GuideBasis = {
-  start_page: string;
-  last_page: string;
-  chapter: string;
-  note?: string | null;
-};
-
-type SafetyCheck = {
-  content: string;
-  guide_basis: GuideBasis;
-};
-
-type LocatingTest = {
-  test_content: string;
-  purpose: string;
-  required_observations: string;
-  proceed_constraint: string;
-  guide_basis: GuideBasis;
-};
-
-type LocatingResponse = {
-  safety_checks: SafetyCheck[];
-  test_in_order: LocatingTest[];
-};
-
-type AnalysisResponse = {
-  root_cause: string;
-  reasoning: string;
-  guide_basis: GuideBasis[];
-};
-
-type ActionResponse = {
-  fix_steps: string[];
-  safety_checks: string[];
-  impact_assessment: string;
-  rollback_plan: string[];
-  guide_basis: GuideBasis[];
-};
-
-type ConclusionResponse = {
-  symptom: string;
-  resolution: string;
-  user_feedback: string;
-  guide: string;
-};
-
-type ClientActionResponse = {
-  phase?: PhaseKey;
-  data?: unknown;
-  error?: string;
-};
-
-const PHASE_ENDPOINTS: Record<PhaseKey, string> = {
+const PHASE_ENDPOINTS = {
   identify: "/api/identify",
   locating: "/api/locating",
   analyze: "/api/analyze",
@@ -76,20 +14,16 @@ const PHASE_ENDPOINTS: Record<PhaseKey, string> = {
   validate: "/api/conclusion",
 };
 
-const isPhaseKey = (value: string): value is PhaseKey =>
-  ["identify", "locating", "analyze", "action", "validate"].includes(value);
-
 const createSessionId = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);
 
-export async function clientAction({ request }: Route.ClientActionArgs): Promise<ClientActionResponse> {
+export async function clientAction({ request }: Route.ClientActionArgs) {
   const formData = await request.formData();
-  const phaseRaw = (formData.get("phase") ?? "").toString();
-  const phase = isPhaseKey(phaseRaw) ? phaseRaw : undefined;
+  const phase = (formData.get("phase") ?? "").toString();
 
-  if (!phase) {
+  if (!phase || !(phase in PHASE_ENDPOINTS)) {
     return { error: "Invalid phase was provided. Please try again." };
   }
 
@@ -97,14 +31,9 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
   const payload = new FormData();
 
   formData.forEach((value, key) => {
-    if (key === "phase") {
-      return;
-    }
-    if (typeof value === "string") {
-      payload.append(key, value);
-    } else {
-      payload.append(key, value, value.name);
-    }
+    if (key === "phase") return;
+    if (typeof value === "string") payload.append(key, value);
+    else payload.append(key, value, value.name);
   });
 
   const response = await fetch(endpoint, { method: "POST", body: payload });
@@ -119,42 +48,25 @@ export async function clientAction({ request }: Route.ClientActionArgs): Promise
 export default function Home({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
-  const submittingPhase = useMemo(
-    () => (isSubmitting ? navigation.formData?.get("phase")?.toString() ?? null : null),
-    [isSubmitting, navigation.formData],
-  );
 
-  const [sessionId, setSessionId] = useState<string>("");
-  const [query, setQuery] = useState<string>("");
-  const [identifyResult, setIdentifyResult] = useState<IdentifyResponse | null>(null);
-  const [locatingResult, setLocatingResult] = useState<LocatingResponse | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
-  const [actionResult, setActionResult] = useState<ActionResponse | null>(null);
-  const [conclusionResult, setConclusionResult] = useState<ConclusionResponse | null>(null);
-  const [locatingResponseInput, setLocatingResponseInput] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const submittingPhase = isSubmitting ? navigation.formData?.get("phase")?.toString() ?? null : null;
 
-  useEffect(() => {
-    if (!sessionId) {
-      setSessionId(createSessionId());
-    }
-  }, [sessionId]);
+  const [sessionId, setSessionId] = useState(() => createSessionId());
+  const [query, setQuery] = useState("");
+  const [identifyResult, setIdentifyResult] = useState(null);
+  const [locatingResult, setLocatingResult] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [actionResult, setActionResult] = useState(null);
+  const [conclusionResult, setConclusionResult] = useState(null);
+  const [locatingResponseInput, setLocatingResponseInput] = useState("");
 
   useEffect(() => {
     if (!actionData) return;
-
-    if (actionData.error) {
-      setErrorMessage(actionData.error);
-      return;
-    }
-
-    setErrorMessage(null);
-
     if (!actionData.phase) return;
 
     switch (actionData.phase) {
       case "identify":
-        setIdentifyResult(actionData.data as IdentifyResponse);
+        setIdentifyResult(actionData.data);
         setLocatingResult(null);
         setAnalysisResult(null);
         setActionResult(null);
@@ -162,16 +74,16 @@ export default function Home({ actionData }: Route.ComponentProps) {
         setLocatingResponseInput("");
         break;
       case "locating":
-        setLocatingResult(actionData.data as LocatingResponse);
+        setLocatingResult(actionData.data);
         break;
       case "analyze":
-        setAnalysisResult(actionData.data as AnalysisResponse);
+        setAnalysisResult(actionData.data);
         break;
       case "action":
-        setActionResult(actionData.data as ActionResponse);
+        setActionResult(actionData.data);
         break;
       case "validate":
-        setConclusionResult(actionData.data as ConclusionResponse);
+        setConclusionResult(actionData.data);
         break;
       default:
         break;
@@ -187,7 +99,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
     setActionResult(null);
     setConclusionResult(null);
     setLocatingResponseInput("");
-    setErrorMessage(null);
   };
 
   const restartWithSameSession = () => {
@@ -197,7 +108,6 @@ export default function Home({ actionData }: Route.ComponentProps) {
     setActionResult(null);
     setConclusionResult(null);
     setLocatingResponseInput("");
-    setErrorMessage(null);
   };
 
   const extractedKeywords = identifyResult?.extracted_keywords ?? [];
