@@ -318,6 +318,11 @@ export default function Home({ actionData }: Route.ComponentProps) {
                       key={`${item.content}-${index}`}
                       className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm"
                     >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+                          Check {index + 1}
+                        </span>
+                      </div>
                       <p className="font-semibold text-amber-900">{item.content}</p>
                       <p className="text-[11px] font-medium text-amber-900/80">
                         {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
@@ -443,20 +448,32 @@ export default function Home({ actionData }: Route.ComponentProps) {
             <div className="space-y-4 rounded-xl border border-slate-200/70 bg-white/90 p-4 text-sm text-foreground shadow-sm">
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Fix steps</p>
-                <ol className="list-decimal space-y-2 pl-5">
+                <ol className="space-y-3">
                   {actionResult.fix_steps.map((step, index) => (
-                    <li key={`${step}-${index}`} className="leading-6 text-slate-900">
-                      {step}
+                    <li
+                      key={`${step}-${index}`}
+                      className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                          Step {index + 1}
+                        </p>
+                      </div>
+                      <p className="leading-6 text-slate-900">{step}</p>
                     </li>
                   ))}
                 </ol>
               </div>
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Safety checks</p>
-                <ul className="list-disc space-y-2 rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3 pl-6 text-amber-900 shadow-sm">
+                <ul className="space-y-3">
                   {actionResult.safety_checks.map((step, index) => (
-                    <li key={`${step}-${index}`} className="leading-6">
-                      {step}
+                    <li
+                      key={`${step}-${index}`}
+                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 shadow-sm"
+                    >
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Check {index + 1}</span>
+                      <p className="leading-6">{step}</p>
                     </li>
                   ))}
                 </ul>
@@ -467,10 +484,18 @@ export default function Home({ actionData }: Route.ComponentProps) {
               </div>
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Rollback plan</p>
-                <ol className="list-decimal space-y-2 pl-5">
+                <ol className="space-y-3">
                   {actionResult.rollback_plan.map((step, index) => (
-                    <li key={`${step}-${index}`} className="leading-6 text-slate-900">
-                      {step}
+                    <li
+                      key={`${step}-${index}`}
+                      className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                          Step {index + 1}
+                        </p>
+                      </div>
+                      <p className="leading-6 text-slate-900">{step}</p>
                     </li>
                   ))}
                 </ol>
