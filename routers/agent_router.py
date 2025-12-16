@@ -6,7 +6,7 @@ from libs.vector_search import get_vector_store
 from models import History
 from schemas import IdentifyProblemForm, LocatingProblemForm, AnalyzeProblemForm, ActionProblemForm, ValidateActionForm, ConclusionForm
 from llm.identify_agent import create_identify_agent, IDENTIFY_USER_PROMPT, IdentificationOutput
-from llm.locating_agent import create_locating_agent, LOCATING_USER_PROMPT
+from llm.locating_agent import LocatingOutput, create_locating_agent, LOCATING_USER_PROMPT
 from llm.analyze_agent import create_analyze_agent, ANALYZE_USER_PROMPT
 from llm.action_agent import create_action_agent, ACTION_USER_PROMPT
 from llm.conclusion_agent import ConclusionOutput, create_conclusion_agent
@@ -27,7 +27,7 @@ async def identify_problem(request: Annotated[IdentifyProblemForm, Form()]) -> I
 async def locating_problem(
     request: Annotated[LocatingProblemForm, Form()],
     vector_store=Depends(get_vector_store)
-):
+) -> LocatingOutput:
     session = SQLiteSession(request.session_id, "conversations.db")
     search_query = request.facts
 

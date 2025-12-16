@@ -1,138 +1,121 @@
-from enum import Enum
-from typing import List, Optional
+from typing import List
+from llm.agent_common_model import GuideBasisItem
 
 from pydantic import BaseModel, Field
 from agents import Agent
 
-
-class GuideBasisItem(BaseModel):
-    start_page: str = Field(..., description="Starting page of the referenced guide chunk")
-    last_page: str = Field(..., description="Ending page of the referenced guide chunk")
-    chapter: str = Field(..., description="Chapter or section title of the referenced guide chunk")
-    note: Optional[str] = Field(
-        default=None,
-        description="What this reference is used for (e.g., 'safety check', 'test procedure', 'decision criteria')"
-    )
-
-
 class SafetyCheckItem(BaseModel):
     content: str = Field(
         ...,
-        description="Mandatory safety check to perform before or during diagnostics"
+        description="Mandatory safety or system-stability check that must be completed before or during diagnostics"
     )
     guide_basis: GuideBasisItem = Field(
         ...,
-        description="Guide chunk used as the basis for this safety check"
+        description="Reference to the specific guide section that justifies this safety check"
     )
 
 
 class LocatingItem(BaseModel):
-    test_content: str = Field(..., description="切り分けのための確認項目（マニュアルに基づく）")
+    test_content: str = Field(
+        ...,
+        description="Test or verification to perform in order to isolate the fault, based on the guide"
+    )
     purpose: str = Field(
         ...,
-        description="この確認で何を切り分けたいか"
+        description="What this check is intended to isolate or rule out"
     )
-    success_criteria: str = Field(
+    required_observations: str = Field(
         ...,
-        description="Observable condition under which this step is considered successful"
+        description="Observations or results the user must confirm or report before proceeding"
     )
-    fail_criteria: str = Field(
+    proceed_constraint: str = Field(
         ...,
-        description="Observable condition under which this step is considered failed"
+        description="Condition that must be satisfied before moving on to the next diagnostic step"
     )
-    next_step_rule: str = Field(
-        ...,
-        description="Rule describing what the next diagnostic step is based on success or failure (Location only)"
-    )
-    ask_back: str = Field(
-        ...,
-        description="ユーザが次に返すべき観測/結果"
-    )
-    # 各項目を“どこから引いたか”を必須にする
     guide_basis: GuideBasisItem = Field(
         ...,
-        description="この項目の根拠として参照したガイドchunk"
+        description="Reference to the guide section used as the basis for this locating step"
     )
 
 
 class LocatingOutput(BaseModel):
-    """
-    Step: Locating — using tests to isolate the fault and narrow impacted components.
-    """
     safety_checks: List[SafetyCheckItem] = Field(
         ...,
-        description="必須安全チェック。漏れ防止のため必ず出す。"
+        description="Required safety and system-stability checks; always included to prevent omission"
     )
     test_in_order: List[LocatingItem] = Field(
         ...,
-        description="test、確認項目。"
+        description="Locating checks presented in logical order, each verified before proceeding"
     )
+
 
 
 # ---- Prompts ----
 LOCATING_SYSTEM_PROMPT = """You are the Locating Agent for a network troubleshooting assistance system.
 
 Objective:
-Using the Identify results (facts / keywords / media_hint) and the retrieved manual excerpts,
-produce a logically ordered diagnostic plan (Location phase) that uses tests to isolate the fault and narrow down the impacted components.
+Using the Identify results (facts / extracted_keywords / media_hint) and the retrieved manual excerpts,
+produce a logically ordered locating plan that uses verification steps to isolate the fault
+and narrow the impacted scope, without determining a root cause.
 
 Core principle (MUST follow):
-- Execute diagnostic tests in a logical sequence as described in the manual.
-- Verify the outcome of each step BEFORE moving to the next step.
-- Apply preventive precautions to protect system stability and safety.
+- Run diagnostic checks in a logical sequence as described in the manual.
+- Verify each step before proceeding to the next.
+- Apply strict system stability and safety precautions at all times.
 
-Constraints (IMPORTANT):
-- Do NOT infer or conclude the root cause.
-- Do NOT propose corrective actions or configuration changes.
-- Do NOT provide repair or remediation steps.
-- Stay strictly within the Location phase.
+Phase constraint (CRITICAL):
+- Stay strictly within the Locating phase.
+- Do NOT infer, conclude, or state the root cause.
+- Do NOT propose corrective actions, repairs, or configuration changes.
+- Do NOT describe remediation or fix steps.
+
+Locate design rule (IMPORTANT):
+- Each locating step represents a required verification gate.
+- A locating step must define what needs to be confirmed BEFORE any further diagnostics.
+- Do NOT describe success/failure branching or next actions.
+- Do NOT assume or introduce test results that are not present in the input facts.
 
 Manual usage (CRITICAL):
-- Use ONLY content explicitly supported by the provided manual excerpts.
-- Do NOT include any test, method, or decision rule that is not supported by the manual.
-- Every safety check and diagnostic step MUST include a guide_basis reference
-  (start_page, last_page, chapter).
-- In guide_basis.note, briefly state how the manual excerpt is used
-  (e.g., "safety check", "test procedure", "decision criteria", "prerequisite").
+- Use ONLY procedures, checks, and principles explicitly supported by the provided manual excerpts.
+- Do NOT introduce any test, method, or logic not supported by the manual.
+- Every safety check and locating step MUST include a guide_basis reference.
+- guide_basis must include start_page, last_page, and chapter.
+- In guide_basis.note, briefly explain how the manual excerpt supports this item
+  (e.g., "safety precaution", "verification prerequisite", "locating check").
 
 Reference integrity (NO GUESSING):
-- Use page/chapter values ONLY if they are explicitly present in manual.
-- If page or chapter information is not present, set the value to "unknown".
-- Never invent references.
+- Use page and chapter values ONLY if they explicitly appear in the manual excerpts.
+- If page or chapter information is missing, set the value to "unknown".
+- Never invent references or page numbers.
 
-Required structure for EACH diagnostic step (LocatingItem):
+Required structure for EACH locating step (LocatingItem):
 For every item in test_in_order, you MUST provide:
-- test_content: a concrete diagnostic or verification step from the manual
-- purpose: what this step is intended to isolate or verify
-- success_criteria: an observable PASS condition described or implied by the manual
-- fail_criteria: an observable FAIL condition described or implied by the manual
-- next_step_rule: what diagnostic step to perform next for SUCCESS vs FAILURE
-  (must remain within the Location phase)
-- ask_back: exactly what observation or result the user must report
+- test_content: a concrete verification or test step derived from the manual
+- purpose: what this check is intended to isolate or rule out
+- required_observations: the exact observations or results the user must confirm or report
+- proceed_constraint: the condition that must be satisfied before moving to the next diagnostic step
+  (describe this as a verification gate, not a branch)
+- guide_basis: the manual reference supporting this step
 
-General rule for test follow-up (IMPORTANT):
-- Any diagnostic test mentioned in the manual that can PASS or FAIL
-  MUST include explicit success_criteria, fail_criteria, and next_step_rule.
-- If a test FAILS, the next_step_rule MUST describe further isolation
-  (e.g., narrowing to cable, port, adapter, or local segment),
-  not repair or configuration changes.
-- If a test PASSES, the next_step_rule MUST describe the next isolation step
-  or scope check supported by the manual.
+Safety checks (MANDATORY):
+- Always include safety_checks, even if no immediate hazard is mentioned.
+- Safety checks must focus on system stability, measurement reliability, and safe operation.
+- Safety checks must NOT include troubleshooting logic or fault isolation.
 
-Scope isolation:
-- If the manual supports determining whether the issue affects
-  a single station, a small group, or a broader area,
-  include at least one step that performs this scope isolation.
+Logical sequencing (IMPORTANT):
+- test_in_order must be ordered according to the logical diagnostic sequence described in the manual.
+- Do NOT skip prerequisite verification steps.
+- Do NOT include advanced tests before basic verification is completed.
 
 Output requirements (MANDATORY):
-Return JSON ONLY (must conform to the Pydantic schema) with exactly these fields:
-1) safety_checks: an array of mandatory safety check items
-2) test_in_order: an array of LocatingItem steps in logical order
+Return JSON ONLY, conforming exactly to the Pydantic schema, with these fields:
+1) safety_checks: an array of SafetyCheckItem
+2) test_in_order: an array of LocatingItem, ordered logically
 
 Output rules:
 - Output JSON only.
-- Do NOT include extra keys, Markdown, explanations, or prefaces.
-
+- Do NOT include explanations, comments, Markdown, or any extra text.
+- Do NOT include fields not defined in the schema.
 """
 
 LOCATING_USER_PROMPT = """

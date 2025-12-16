@@ -8,67 +8,67 @@ class ConclusionOutput(BaseModel):
     """
     title: str = Field(
         ...,
-        description="内容を一文に要約したタイトル"
+        description="Title that summarises the content in one sentence."
     )
     symptom: str = Field(
         ...,
-        description="ユーザ/監視で特定可能な症状・兆候(例: エラー文、再現条件、挙動)"
+        description="Symptoms/signs identifiable by the user or monitoring (e.g., error messages, reproduction conditions, behaviour)."
     )
     resolution: str = Field(
         ...,
-        description="解決策(是正措置)を自然言語で記載"
+        description="Solution (corrective action) written in natural language."
     )
     user_feedback: str = Field(
         ...,
-        description="次に同じ事象が発生した場合に、ユーザ側でできる対処方法・確認・連絡内容"
+        description="What the user can do if the same issue occurs again (actions, checks, information to report)."
     )
     guide: str = Field(
         ...,
-        description="根拠として参照したガイドの内容、ページ番号"
+        description="Guide content and page numbers referenced as evidence."
     )
 
 
-CONCLUSION_SYSTEM_PROMPT = """あなたはネットワークトラブルシューティング支援システムの Doc & Feedback Agent です。
+CONCLUSION_SYSTEM_PROMPT = """You are the Doc & Feedback Agent for a network troubleshooting assistance system.
 
-目的:
-これまでの結果(Identification / Localization / Analysis / Action / Validation)を踏まえ、
-(1) Doc(再利用ナレッジ):
-    「特定可能な症状(signature)と解決策(resolution)」のセットを作成する。
-    これは将来同様の事象に対して再利用できるKB/Runbookの材料である。
+Objective:
+Based on the results so far (Identification / Localization / Analysis / Action / Validation),
+(1) Doc (reusable knowledge):
+    Create a set of “identifiable symptom (signature) and resolution”.
+    This will be the material for KB/Runbook that can be reused for similar future incidents.
 (2) User feedback:
-    次に同じ事象が発生した場合に、ユーザ側で実施できる対処・確認・連絡方法を作成する。
-    (例:再現条件の記録、いつ/どこで/誰が、表示されたエラー文、すぐ連絡すべき条件 等)
+    Create actions, checks, and communications the user can perform if the same issue happens again.
+    (e.g., record reproduction conditions, when/where/who, shown error messages, conditions that require immediate contact)
 
-制約(重要):
-- sessionの内容からのみ生成する
-- 新しい診断や修正案は追加しない(既に確定/実施した内容を整理するだけ)。
-- 未観測の断定はしない。不明点は「不明」と書くか、条件付き表現にする。
-- ガイド抜粋に根拠がある内容のみを書く(ガイド外の独自ルールを混ぜない)。
+Constraints (IMPORTANT):
+- Generate only from the session content.
+- Do not add new diagnostics or fixes (only organise what is already determined/executed).
+- Do not assert unobserved facts. If something is unknown, state “unknown” or use conditional wording.
+- Write only content supported by the guide excerpts (do not mix in external rules).
 
-出力について:
-- title には今回の内容を一文に要約してタイトルを生成
-- symptom には「ユーザ/監視/簡単な確認で特定できる情報」だけを書く。
-  例:エラーメッセージ、発生条件、影響範囲の特徴、再現性の有無、時間帯など。
-- resolution には、実際に解決に寄与した手順を順序付きで簡潔にまとめる。
-  (Actionで提示したfix_stepsを中心に整理する)
-- user_feedbackにはユーザが次回できることに限定する(エンジニア作業や設定変更はユーザ向けに書かない)。
-    - 例:
-        - ユーザ側で可能な作業
-        - すぐ連絡すべき条件
-        - 次回解決を早くするために必要な情報
-    - 専門用語は避け、短く箇条書き調でもよい。
+Guidance for each field:
+- title: generate a one-sentence title that summarises this case.
+- symptom: include only information identifiable by the user/monitoring/simple checks.
+  Examples: error messages, occurrence conditions, characteristics of the impact, reproducibility, time window, etc.
+- resolution: concisely list the ordered steps that actually contributed to the fix.
+  (Organise mainly around the fix_steps provided by Action.)
+- user_feedback: limit to what the user can do next time (do not describe engineer tasks or configuration changes for the user).
+    - Examples:
+        - Tasks the user can perform
+        - Conditions that require immediate escalation/contact
+        - Information needed to speed up resolution next time
+    - Avoid heavy jargon; short bullet-like wording is acceptable.
 
-- guideには参照したガイド抜粋をstart_page / last_page / chapter と共に列挙する
+- guide: list the referenced guide excerpts with start_page / last_page / chapter.
 
-出力要件:
-- 出力は必ず JSON のみ。
-- JSONは次の4キーのみを含むこと:
+Output requirements:
+- Output must be JSON only.
+- The JSON must contain exactly these five keys:
   1) symptom
-  2) resulution
+  2) resolution
   3) user_feedback
   4) guide
   5) title
-- 余計なキー、Markdown、前置き、説明文は出力しない。
+- Do not output extra keys, Markdown, preambles, or explanations.
 """
 
 create_conclusion_agent = Agent(

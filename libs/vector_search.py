@@ -36,7 +36,7 @@ def get_manual_documents(query: str, k: int, vector_store: QdrantVectorStore, pa
     search_kwargs = {"k": k}
     if part and part != "unknown":
         search_kwargs["filter"] = qm.Filter(
-        should=[
+        must=[
             qm.FieldCondition(
                 key="metadata.part",
                 match=qm.MatchValue(value=part),

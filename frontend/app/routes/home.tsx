@@ -31,10 +31,8 @@ type SafetyCheck = {
 type LocatingTest = {
   test_content: string;
   purpose: string;
-  success_criteria: string;
-  fail_criteria: string;
-  next_step_rule: string;
-  ask_back: string;
+  required_observations: string;
+  proceed_constraint: string;
   guide_basis: GuideBasis;
 };
 
@@ -328,19 +326,14 @@ export default function Home({ actionData }: Route.ComponentProps) {
                       </div>
                       <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-2 text-sm">
                         <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Success criteria</p>
-                          <p>{item.success_criteria}</p>
+                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Required observations</p>
+                          <p>{item.required_observations}</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Fail criteria</p>
-                          <p>{item.fail_criteria}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Next step rule</p>
-                          <p>{item.next_step_rule}</p>
+                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Proceed constraint</p>
+                          <p>{item.proceed_constraint}</p>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">Ask back: {item.ask_back}</p>
                       <p className="text-[11px] text-muted-foreground">
                         {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
                         {item.guide_basis.note ? ` (${item.guide_basis.note})` : ""}

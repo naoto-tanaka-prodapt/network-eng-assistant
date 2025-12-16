@@ -1,92 +1,78 @@
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel, Field
 from agents import Agent
+from llm.agent_common_model import GuideBasisItem
 
-
-class GuideBasisItem(BaseModel):
-    start_page: str = Field(..., description="参照したガイドチャンクの開始ページ")
-    last_page: str = Field(..., description="参照したガイドチャンクの終了ページ")
-    chapter: str = Field(..., description="参照したガイドチャンクの章")
-    note: Optional[str] = Field(
-        default=None,
-        description="何の根拠として使ったか(例: '安全確認', '手順', 'ロールバック')"
-    )
 
 class ActionOutput(BaseModel):
     """
-    Step: Taking corrective action — applying fixes and verifying their effectiveness
-    ※本課題では safety/stability/rollback を必須にする
+    Step: Taking corrective action — applying fixes and verifying their effectiveness.
+    Note: In this task, safety/stability/rollback are mandatory.
     """
-    # 是正措置(実施順)
     fix_steps: List[str] = Field(
         ...,
-        description="実施すべき是正措置(順序付き)。設定変更や作業手順を含む場合は簡潔に。"
+        description="Ordered corrective actions to perform. Keep concise if configuration changes or work instructions are included."
     )
 
-    # 安全確認(必須)
     safety_checks: List[str] = Field(
         ...,
-        description="作業前/作業中に必ず実施する安全確認(必須)。"
+        description="Safety checks that must be performed before and during work (mandatory)."
     )
 
-    # 影響評価(必須)
     impact_assessment: str = Field(
         ...,
-        description="影響範囲・影響度・実施タイミング等の評価(必須)。"
+        description="Assessment of impact scope, severity, and timing (mandatory)."
     )
 
-    # ロールバック(必須)
     rollback_plan: List[str] = Field(
         ...,
-        description="失敗時に元に戻す手順(必須)。"
+        description="Steps to restore the system if the action fails (mandatory)."
     )
 
-    # 根拠(必須)
     guide_basis: List[GuideBasisItem] = Field(
         ...,
-        description="本出力の根拠として参照したガイドchunk(最低1つ)"
+        description="Guide chunks referenced as evidence for this output (at least one)."
     )
 
 
 
 ACTION_SYSTEM_PROMPT = """
-あなたはネットワークトラブルシューティング支援システムの Action Agent です。
+You are the Action Agent for a network troubleshooting assistance system.
 
-目的:
-Analyse Agent が特定した root cause(根本原因)と、その根拠(測定・挙動)を入力として、
-是正措置(corrective action)を提案してください。
-ただし本システムは “retrieval assistant” であるため、ガイド抜粋に基づく内容のみを提示します。
+Objective:
+Use the root cause identified by the Analyze Agent, along with its evidence (measurements/behaviour), to propose corrective actions.
+Because this system is a “retrieval assistant”, only present content grounded in the provided guide excerpts.
 
-制約(重要):
-- ガイド抜粋に根拠がない是正措置は提示しない。
-- 原因の再推定はしない(Analysisの担当)。
-- 「論理的順序」を守る(準備→実施→(必要なら最小の確認))。
-- システム安定性と安全を最優先する(安全確認・影響評価・ロールバックを必ず含める)。
+Constraints (IMPORTANT):
+- Do not propose corrective actions that lack support in the guide excerpts.
+- Do not re-estimate the cause (handled by the Analysis phase).
+- Follow logical order (preparation → execution → minimal verification if necessary).
+- Prioritise system stability and safety (always include safety checks, impact assessment, and rollback).
 
-出力要件(必須):
-出力JSONは必ず次の5項目を含むこと。空は不可。
-1) fix_steps: 是正措置の手順(順序付き)
-2) safety_checks: 作業前/作業中の安全確認(必須)
-3) impact_assessment: 影響評価(必須)
-4) rollback_plan: 失敗時に元に戻す手順(必須)
-5) guide_basis: 根拠にしたガイド抜粋の一覧(最低1つ)
+Output requirements (MANDATORY):
+The output JSON must include all five items below; none may be empty.
+1) fix_steps: ordered corrective action steps
+2) safety_checks: safety checks before/during work (required)
+3) impact_assessment: impact assessment (required)
+4) rollback_plan: steps to restore the system if the action fails (required)
+5) guide_basis: list of guide excerpts used as evidence (at least one)
 
-根拠の出し方:
-- guide_basis には、参照したガイド抜粋の start_page / last_page / chapter を必ず入れる。
-- note には、どの出力(安全確認/手順/ロールバック等)の根拠に使ったかを短く書く。
+How to provide evidence:
+- guide_basis must include start_page / last_page / chapter for the referenced guide excerpt.
+- In note, briefly state which output (safety check/step/rollback, etc.) the citation supports.
 
-禁止事項:
-- 余計なキーを出力しない。
-- Markdownや説明文、前置きは出力しない(JSONのみ)。
+Forbidden:
+- Do not output extra keys.
+- Do not output Markdown, explanations, or preambles (JSON only).
 """
 
 ACTION_USER_PROMPT = """
-以下がAnalyze Agentで特定した原因です
+Below is the cause identified by the Analyze Agent:
 
 {root_cause}
 
 
-以下が検索されたマニュアル抜粋です:
+Below are the retrieved manual excerpts:
 
 {manual}
 """
