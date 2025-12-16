@@ -208,16 +208,20 @@ export default function Home({ actionData }: Route.ComponentProps) {
   const keywordsForPayload = extractedKeywords.join(", ");
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-white px-4 py-3 text-sm">
-        <div className="flex flex-wrap items-center gap-3 text-muted-foreground">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
+      <div className="flex flex-wrap items-start justify-between">
+        <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
           {isSubmitting && submittingPhase && (
-            <span className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-800">
+            <span className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800">
+              <span className="h-2 w-2 rounded-full bg-sky-500" aria-hidden />
               {submittingPhase} is running...
             </span>
           )}
           {errorMessage && (
-            <span className="rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">{errorMessage}</span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-800">
+              <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
+              {errorMessage}
+            </span>
           )}
         </div>
         <Button variant="default" size="sm" onClick={resetSession} disabled={isSubmitting} className="ml-auto">
@@ -230,7 +234,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
           <CardTitle>Step 1. Identify</CardTitle>
           <CardDescription>Interpreting alarms, symptoms, and error reports</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <Form method="post" className="space-y-3">
             <input type="hidden" name="phase" value="identify" />
             <input type="hidden" name="session_id" value={sessionId} />
@@ -246,32 +250,37 @@ export default function Home({ actionData }: Route.ComponentProps) {
               />
             </div>
             <Button type="submit" variant="default" className="w-full sm:w-fit" disabled={isSubmitting || !sessionId}>
-              {submittingPhase === "identify" ? "Identifying..." : "Run identify"}
+              {submittingPhase === "identify" ? "Running..." : "Run identify"}
             </Button>
           </Form>
 
           {identifyResult && (
-            <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Facts</p>
-                <p>{identifyResult.facts}</p>
+            <div className="space-y-3 rounded-xl border border-slate-200/70 bg-white/80 p-4 text-sm text-foreground shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Facts</p>
               </div>
+              <p className="leading-6 text-slate-800">{identifyResult.facts}</p>
               <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Extracted keywords</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Extracted keywords</p>
                 <div className="flex flex-wrap gap-2">
                   {identifyResult.extracted_keywords.map((keyword) => (
                     <span
                       key={keyword}
-                      className="rounded-full bg-white px-2 py-1 text-[11px] font-semibold uppercase text-slate-700"
+                      className="rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase text-indigo-800 shadow-sm"
                     >
                       {keyword}
                     </span>
                   ))}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Category: <span className="font-semibold text-foreground">{identifyResult.media_hint}</span>
-              </p>
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Category</p>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-indigo-100 text-indigo-800 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
+                    {identifyResult.media_hint}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
@@ -282,7 +291,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
           <CardTitle>Step 2. Locating</CardTitle>
           <CardDescription>Isolating the fault using tests and narrowing down affected components</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <Form method="post" className="space-y-3">
             <input type="hidden" name="phase" value="locating" />
             <input type="hidden" name="session_id" value={sessionId} />
@@ -295,49 +304,61 @@ export default function Home({ actionData }: Route.ComponentProps) {
               className="w-full sm:w-fit"
               disabled={!identifyResult || isSubmitting || !sessionId}
             >
-              {submittingPhase === "locating" ? "Generating checks..." : "Run locating"}
+              {submittingPhase === "locating" ? "Running..." : "Run locating"}
             </Button>
           </Form>
 
           {locatingResult && (
-            <div className="space-y-4 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
+            <div className="space-y-5 rounded-xl border border-slate-200/70 bg-white/90 p-4 text-sm text-foreground shadow-sm">
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Safety checks</p>
-                <ul className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Safety checks</p>
+                <ul className="space-y-3">
                   {locatingResult.safety_checks.map((item, index) => (
-                    <li key={`${item.content}-${index}`} className="rounded bg-white px-2 py-1">
-                      <p>{item.content}</p>
-                      <p className="text-[11px] text-muted-foreground">
+                    <li
+                      key={`${item.content}-${index}`}
+                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 shadow-sm"
+                    >
+                      <p className="font-semibold text-amber-900">{item.content}</p>
+                      <p className="text-[11px] font-medium text-amber-900/80">
                         {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
-                        {item.guide_basis.note ? ` (${item.guide_basis.note})` : ""}
                       </p>
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Tests in order</p>
-                <ol className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Tests in order</p>
+                <ol className="space-y-3">
                   {locatingResult.test_in_order.map((item, index) => (
-                    <li key={`${item.test_content}-${index}`} className="space-y-2 rounded bg-white px-3 py-3">
+                    <li
+                      key={`${item.test_content}-${index}`}
+                      className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                          Step {index + 1}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
+                        </p>
+                      </div>
                       <div className="space-y-1">
-                        <p className="font-semibold">{item.test_content}</p>
-                        <p className="text-foreground/80">{item.purpose}</p>
+                        <p className="font-semibold leading-6 text-slate-900">{item.test_content}</p>
                       </div>
-                      <div className="grid gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-2 text-sm">
+                      <div className="grid gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
                         <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Required observations</p>
-                          <p>{item.required_observations}</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">Purpose</p>
+                          <p className="leading-6 text-slate-800">{item.purpose}</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-[11px] font-semibold uppercase text-muted-foreground">Proceed constraint</p>
-                          <p>{item.proceed_constraint}</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">Required observations</p>
+                          <p className="leading-6 text-slate-800">{item.required_observations}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500">Proceed constraint</p>
+                          <p className="leading-6 text-slate-800">{item.proceed_constraint}</p>
                         </div>
                       </div>
-                      <p className="text-[11px] text-muted-foreground">
-                        {item.guide_basis.chapter} p.{item.guide_basis.start_page}-{item.guide_basis.last_page}
-                        {item.guide_basis.note ? ` (${item.guide_basis.note})` : ""}
-                      </p>
                     </li>
                   ))}
                 </ol>
@@ -352,7 +373,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
           <CardTitle>Step 3. Analyze</CardTitle>
           <CardDescription>Determining root cause from measurements and system behaviour</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <Form method="post" className="space-y-3">
             <input type="hidden" name="phase" value="analyze" />
             <input type="hidden" name="session_id" value={sessionId} />
@@ -374,20 +395,20 @@ export default function Home({ actionData }: Route.ComponentProps) {
               className="w-full sm:w-fit"
               disabled={!locatingResult || !locatingResponseInput.trim() || isSubmitting || !sessionId}
             >
-              {submittingPhase === "analyze" ? "Analyzing..." : "Run analyze"}
+              {submittingPhase === "analyze" ? "Running..." : "Run analyze"}
             </Button>
           </Form>
 
           {analysisResult && (
-            <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Root cause</p>
-              <p className="font-semibold">{analysisResult.root_cause}</p>
-              <p className="text-foreground/80">{analysisResult.reasoning}</p>
-              <div className="space-y-1 pt-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Guide basis</p>
-                <ul className="space-y-1 text-xs">
+            <div className="space-y-3 rounded-xl border border-slate-200/70 bg-white/90 p-4 text-sm text-foreground shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Root cause</p>
+              <p className="text-base font-semibold leading-6 text-slate-900">{analysisResult.root_cause}</p>
+              <p className="leading-6 text-foreground/80">{analysisResult.reasoning}</p>
+              <div className="space-y-2 pt-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Guide basis</p>
+                <ul className="flex flex-wrap gap-2 text-xs">
                   {analysisResult.guide_basis.map((item, index) => (
-                    <li key={`${item.chapter}-${index}`} className="rounded bg-white px-2 py-1">
+                    <li key={`${item.chapter}-${index}`} className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
                     </li>
                   ))}
@@ -403,7 +424,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
           <CardTitle>Step 4. Action</CardTitle>
           <CardDescription>Applying fixes and verifying their effectiveness</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <Form method="post" className="space-y-3">
             <input type="hidden" name="phase" value="action" />
             <input type="hidden" name="session_id" value={sessionId} />
@@ -414,45 +435,51 @@ export default function Home({ actionData }: Route.ComponentProps) {
               className="w-full sm:w-fit"
               disabled={!analysisResult || isSubmitting || !sessionId}
             >
-              {submittingPhase === "action" ? "Preparing fixes..." : "Run action"}
+              {submittingPhase === "action" ? "Running..." : "Run action"}
             </Button>
           </Form>
 
           {actionResult && (
-            <div className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Fix steps</p>
-                <ol className="list-decimal space-y-1 pl-5">
+            <div className="space-y-4 rounded-xl border border-slate-200/70 bg-white/90 p-4 text-sm text-foreground shadow-sm">
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Fix steps</p>
+                <ol className="list-decimal space-y-2 pl-5">
                   {actionResult.fix_steps.map((step, index) => (
-                    <li key={`${step}-${index}`}>{step}</li>
+                    <li key={`${step}-${index}`} className="leading-6 text-slate-900">
+                      {step}
+                    </li>
                   ))}
                 </ol>
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Safety checks</p>
-                <ul className="list-disc space-y-1 pl-5">
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Safety checks</p>
+                <ul className="list-disc space-y-2 rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3 pl-6 text-amber-900 shadow-sm">
                   {actionResult.safety_checks.map((step, index) => (
-                    <li key={`${step}-${index}`}>{step}</li>
+                    <li key={`${step}-${index}`} className="leading-6">
+                      {step}
+                    </li>
                   ))}
                 </ul>
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Impact assessment</p>
-                <p>{actionResult.impact_assessment}</p>
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Impact assessment</p>
+                <p className="leading-6 text-slate-900">{actionResult.impact_assessment}</p>
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Rollback plan</p>
-                <ol className="list-decimal space-y-1 pl-5">
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Rollback plan</p>
+                <ol className="list-decimal space-y-2 pl-5">
                   {actionResult.rollback_plan.map((step, index) => (
-                    <li key={`${step}-${index}`}>{step}</li>
+                    <li key={`${step}-${index}`} className="leading-6 text-slate-900">
+                      {step}
+                    </li>
                   ))}
                 </ol>
               </div>
-              <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Guide basis</p>
-                <ul className="space-y-1 text-xs">
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Guide basis</p>
+                <ul className="flex flex-wrap gap-2 text-xs">
                   {actionResult.guide_basis.map((item, index) => (
-                    <li key={`${item.chapter}-${index}`} className="rounded bg-white px-2 py-1">
+                    <li key={`${item.chapter}-${index}`} className="rounded-md border border-indigo-100 bg-indigo-50 px-3 py-1">
                       {item.chapter} p.{item.start_page}-{item.last_page}
                     </li>
                   ))}
@@ -468,11 +495,11 @@ export default function Home({ actionData }: Route.ComponentProps) {
           <CardTitle>Step 5. Validate & Document</CardTitle>
           <CardDescription>Ensuring no secondary issues remain</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div className="space-y-2">
+        <CardContent className="space-y-5">
+          <div className="space-y-4">
+            <div className="space-y-2 rounded-xl border border-slate-200/80 bg-white/90 p-4 shadow-sm">
               <Label>Select the current state</Label>
-              <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
+              <div className="space-y-3 text-sm text-foreground">
                 <label className="flex items-start gap-2">
                   <input
                     type="radio"
@@ -493,7 +520,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
                     onChange={() => setValidationChoice("unresolved")}
                     className="mt-1"
                   />
-                  <span>Unresolved or secondary impact - go back to Step 1 with the same session_id</span>
+                  <span className="leading-6">Unresolved or secondary impact - go back to Step 1 with the same session_id</span>
                 </label>
               </div>
             </div>
@@ -524,10 +551,10 @@ export default function Home({ actionData }: Route.ComponentProps) {
           </div>
 
           {conclusionResult && (
-            <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-foreground">
+            <div className="space-y-2 rounded-xl border border-slate-200/70 bg-white/90 p-4 text-sm text-foreground shadow-sm">
               <div>
-                <p className="text-xs font-semibold uppercase text-muted-foreground">User feedback</p>
-                <p>{conclusionResult.user_feedback}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">User feedback</p>
+                <p className="leading-6 text-slate-900">{conclusionResult.user_feedback}</p>
               </div>
             </div>
           )}
