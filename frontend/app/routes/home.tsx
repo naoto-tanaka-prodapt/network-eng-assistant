@@ -14,10 +14,7 @@ const PHASE_ENDPOINTS = {
   validate: "/api/conclusion",
 };
 
-const createSessionId = () =>
-  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
+const createSessionId = () => crypto.randomUUID();
 
 export async function clientAction({ request }: Route.ClientActionArgs) {
   const formData = await request.formData();
