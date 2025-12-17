@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field
-from agents import Agent
+from agents import Agent, ModelSettings
 from llm.agent_common_model import GuideBasisItem
 
 
@@ -70,5 +70,8 @@ create_analyze_agent = Agent(
     name="Analyze_Agent",
     instructions=ANALYZE_SYSTEM_PROMPT,
     model="gpt-4.1",
+    model_settings=ModelSettings(
+        temperature=0
+    ),
     output_type=AnalysisOutput,
 )

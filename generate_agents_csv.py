@@ -168,7 +168,7 @@ async def run_case(case: CaseInput, vector_store) -> Dict[str, str]:
 
         analyze_docs = get_manual_documents(
             query=analyze_input,
-            k=3,
+            k=5,
             vector_store=vector_store,
             part=media_hint_value,
         )
@@ -186,7 +186,7 @@ async def run_case(case: CaseInput, vector_store) -> Dict[str, str]:
 
         action_docs = get_manual_documents(
             query=analyze_output.root_cause,
-            k=3,
+            k=5,
             vector_store=vector_store,
             part=media_hint_value,
         )

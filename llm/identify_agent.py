@@ -1,5 +1,5 @@
 from enum import Enum
-from agents import Agent
+from agents import Agent, ModelSettings
 from pydantic import BaseModel, Field
 from typing import List
 
@@ -79,5 +79,8 @@ create_identify_agent = Agent(
     name="Identify_Agent",
     instructions=IDENTIFY_SYSTEM_PROMPT,
     model="gpt-4.1",
+    model_settings=ModelSettings(
+        temperature=0
+    ),
     output_type=IdentificationOutput
 )

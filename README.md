@@ -121,7 +121,17 @@ Identify → Locate → Analyze → Action → Validate.**
 
 ## Key learning from this
 
-### 
+### 1. It is difficult to preserve procedural order when retrieving from long manuals.
+
+- The troubleshooting guide is written more as a narrative document than a step-by-step instruction set.
+- In this project, using filter and assigning LLM was for each phase. But, it remains a challenge.
+- This reflects a realistic scenario commonly encountered in real-world development, making it a valuable learning experience.
+
+### 2. Tradeoff of multi step LLM Execution
+
+- To improve accuracy, I use multi-step LLM execution flow.
+- While this approach improved reasoning clarity, it significantly increased the difficulty of evaluation.
+- I learned the real-world trade-off between system complexity and output accuracy.
 
 <br>
 

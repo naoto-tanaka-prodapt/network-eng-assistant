@@ -2,7 +2,7 @@ from typing import List
 from llm.agent_common_model import GuideBasisItem
 
 from pydantic import BaseModel, Field
-from agents import Agent
+from agents import Agent, ModelSettings
 
 class SafetyCheckItem(BaseModel):
     content: str = Field(
@@ -130,6 +130,7 @@ The following are the retrieved manual excerpts:
 create_locating_agent = Agent(
     name="Locating_Agent",
     instructions=LOCATING_SYSTEM_PROMPT,
-    model="gpt-5.2",
+    model="gpt-5.1",
+    model_settings=ModelSettings(temperature=0),
     output_type=LocatingOutput,
 )

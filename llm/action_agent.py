@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field
-from agents import Agent
+from agents import Agent, ModelSettings
 from llm.agent_common_model import GuideBasisItem
 
 
@@ -68,6 +68,9 @@ Below are the retrieved manual excerpts:
 create_action_agent = Agent(
     name="Action_Agent",
     instructions=ACTION_SYSTEM_PROMPT,
-    model="gpt-5.1",
+    model="gpt-4.1",
+    model_settings=ModelSettings(
+        temperature=0
+    ),
     output_type=ActionOutput,
 )

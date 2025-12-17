@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from agents import Agent
+from agents import Agent, ModelSettings
 
 
 class ConclusionOutput(BaseModel):
@@ -74,6 +74,9 @@ Output requirements:
 create_conclusion_agent = Agent(
     name="Conclusion_Agent",
     instructions=CONCLUSION_SYSTEM_PROMPT,
-    model="gpt-5.1",
+    model="gpt-4.1",
+    model_settings=ModelSettings(
+        temperature=0
+    ),
     output_type=ConclusionOutput,
 )
