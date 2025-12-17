@@ -179,6 +179,14 @@ Difficulty of tracing. Relying on an agent-based framework shifts more control l
 
 ## How to run
 
+**Requirement**
+
+The following are the versions that have been tested and confirmed to work.
+
+- Python 3.14.0
+- Nodejs v24.11.1
+- Bruno 2.13.2
+
 **Install Packages**
 
 ```
