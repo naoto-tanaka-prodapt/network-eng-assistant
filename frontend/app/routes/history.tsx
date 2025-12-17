@@ -15,7 +15,7 @@ export async function clientLoader({ context }: Route.ClientLoaderArgs) {
 
 export default function HistoryList({ loaderData }: Route.ComponentProps) {
   const formatDate = (value: string) =>
-    new Intl.DateTimeFormat("ja-JP", {
+    new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",

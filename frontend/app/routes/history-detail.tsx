@@ -13,7 +13,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
 
 export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
   const formatDate = (value: string) =>
-    new Intl.DateTimeFormat("ja-JP", {
+    new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
