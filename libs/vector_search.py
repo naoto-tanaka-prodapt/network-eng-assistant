@@ -1,9 +1,6 @@
-# from functools import lru_cache
 from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from config import settings
-from qdrant_client.http.models import Distance, VectorParams, Filter, FieldCondition, MatchValue
-from langchain_core.documents import Document
 from qdrant_client.http import models as qm
 
 COLLECTION_NAME = "frontline_lan_metadata"
@@ -48,20 +45,7 @@ def get_manual_documents(query: str, k: int, vector_store: QdrantVectorStore, pa
         search_type="mmr",
         search_kwargs=search_kwargs
     )
-    # results = vector_store.similarity_search(
-    #     query=query,
-    #     k=3,
-    #     filter=models.Filter(
-    #         should=[
-    #             models.FieldCondition(
-    #                 key="metadata.part",
-    #                 match=models.MatchValue(
-    #                     value=part
-    #                 ),
-    #             ),
-    #         ]
-    #     ),
-    # )
+
     return retriever.invoke(query)
 
 

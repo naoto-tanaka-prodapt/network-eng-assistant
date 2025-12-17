@@ -21,19 +21,13 @@ const createSessionId = () =>
 
 export async function clientAction({ request }: Route.ClientActionArgs) {
   const formData = await request.formData();
-  const phase = (formData.get("phase") ?? "").toString();
-
-  if (!phase || !(phase in PHASE_ENDPOINTS)) {
-    return { error: "Invalid phase was provided. Please try again." };
-  }
-
+  const phase = formData.get("phase");
   const endpoint = PHASE_ENDPOINTS[phase];
   const payload = new FormData();
 
   formData.forEach((value, key) => {
     if (key === "phase") return;
-    if (typeof value === "string") payload.append(key, value);
-    else payload.append(key, value, value.name);
+    payload.append(key, value);
   });
 
   const response = await fetch(endpoint, { method: "POST", body: payload });
@@ -49,7 +43,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
-  const submittingPhase = isSubmitting ? navigation.formData?.get("phase")?.toString() ?? null : null;
+  const submittingPhase = isSubmitting ? navigation.formData?.get("phase") ?? null : null;
 
   const [sessionId, setSessionId] = useState(() => createSessionId());
   const [query, setQuery] = useState("");
@@ -59,7 +53,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
   const [actionResult, setActionResult] = useState(null);
   const [conclusionResult, setConclusionResult] = useState(null);
   const [locatingResponseInput, setLocatingResponseInput] = useState("");
-  const step1Ref = useRef<HTMLDivElement | null>(null);
+  const step1Ref = useRef(null);
 
   useEffect(() => {
     if (!actionData) return;

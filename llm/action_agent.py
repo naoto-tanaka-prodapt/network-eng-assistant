@@ -5,10 +5,6 @@ from llm.agent_common_model import GuideBasisItem
 
 
 class ActionOutput(BaseModel):
-    """
-    Step: Taking corrective action — applying fixes and verifying their effectiveness.
-    Note: In this task, safety/stability/rollback are mandatory.
-    """
     fix_steps: List[str] = Field(
         ...,
         description="Ordered corrective actions to perform. Keep concise if configuration changes or work instructions are included."

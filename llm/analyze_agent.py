@@ -5,9 +5,6 @@ from llm.agent_common_model import GuideBasisItem
 
 
 class AnalysisOutput(BaseModel):
-    """
-    Step: Analysing the problem — determining root cause from measurements and system behaviour
-    """
     root_cause: str = Field(
         ...,
         description="Smallest single cause that most reasonably explains the observed results."

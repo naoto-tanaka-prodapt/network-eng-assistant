@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form
 from libs.db import get_session
 from libs.vector_search import get_vector_store
 from models import History
-from schemas import IdentifyProblemForm, LocatingProblemForm, AnalyzeProblemForm, ActionProblemForm, ValidateActionForm, ConclusionForm
+from schemas import IdentifyProblemForm, LocatingProblemForm, AnalyzeProblemForm, ActionProblemForm, ConclusionForm
 from llm.identify_agent import create_identify_agent, IDENTIFY_USER_PROMPT, IdentificationOutput
 from llm.locating_agent import LocatingOutput, create_locating_agent, LOCATING_USER_PROMPT
 from llm.analyze_agent import create_analyze_agent, ANALYZE_USER_PROMPT

@@ -1,28 +1,14 @@
 import { Link } from "react-router";
+import { formatDate } from "~/lib/date-utils"
 import type { Route } from "../+types/root";
 
-type HistoryListItem = {
-  id: number;
-  title: string;
-  created_at: string;
-};
-
-export async function clientLoader({ context }: Route.ClientLoaderArgs) {
+export async function clientLoader() {
   const res = await fetch(`/api/history`);
   const histories = await res.json();
-  return { histories: histories as HistoryListItem[] };
+  return { histories };
 }
 
 export default function HistoryList({ loaderData }: Route.ComponentProps) {
-  const formatDate = (value: string) =>
-    new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(value));
-
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-10">
       <div className="flex items-center justify-between">

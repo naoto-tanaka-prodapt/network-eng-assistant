@@ -1,4 +1,5 @@
-import { Link, useLoaderData } from "react-router";
+import { Link } from "react-router";
+import { formatDate } from "~/lib/date-utils"
 import type { Route } from "../+types/root";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
@@ -12,14 +13,7 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
 }
 
 export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
-  const formatDate = (value: string) =>
-    new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(value));
+
   
   const history = loaderData.history;
 

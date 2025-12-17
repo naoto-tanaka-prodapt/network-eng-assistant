@@ -3,9 +3,6 @@ from agents import Agent, ModelSettings
 
 
 class ConclusionOutput(BaseModel):
-    """
-    Documentation & User Feedback
-    """
     title: str = Field(
         ...,
         description="Title that summarises the content in one sentence."
