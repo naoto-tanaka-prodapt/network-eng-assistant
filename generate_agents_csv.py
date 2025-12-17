@@ -33,8 +33,32 @@ class CaseInput:
 # ---------------------------------------------------------
 CASES: List[CaseInput] = [
     CaseInput(
+        testcase="P1",
+        query="The link does not come up at a newly installed workstation. The wiremap test fails.",
+    ),
+    CaseInput(
+        testcase="P2",
+        query="A Cat6A cabling link fails certification testing. The link occasionally goes down.",
+    ),
+    CaseInput(
+        testcase="P3",
+        query="The network becomes slow only at specific times of the day.",
+    ),
+    CaseInput(
+        testcase="F1",
+        query="The optical link does not come up.",
+    ),
+    CaseInput(
         testcase="N1",
         query="Cannot connect to the server from this PC.",
+    ),
+    CaseInput(
+        testcase="N2",
+        query="The network connection drops after it has been up for a while.",
+    ),
+    CaseInput(
+        testcase="N3",
+        query="This PC is much slower than other PCs on the same network.",
     ),
     CaseInput(
         testcase="S1",
@@ -59,27 +83,44 @@ def _to_json(value: object) -> str:
 
 
 def _build_analyze_input(client: OpenAI, identify_output, locating_output, locate_manual: str) -> str:
-    prompt = f"""You are preparing inputs for the Analyze agent.
-Summarize the locating step results as concise observations in plain text (no fixes, no conclusions).
-Base it strictly on the locating output and the manual snippets; do not invent tests not listed.
+    prompt = f"""You are preparing input for the Analyze agent.
 
-Identify facts:
+This is NOT a summary task.
+
+Your task:
+- Restate ONLY the observations that were explicitly confirmed during the locating phase.
+- Treat the locating output as a record of user-confirmed checks and test results.
+- Do NOT interpret, summarize, generalize, or prioritize.
+- Do NOT infer causes, suggest fixes, or add missing observations.
+- If something was not explicitly confirmed in the locating output, do NOT include it.
+
+Inputs:
+
+[Identify summary]
 {identify_output}
 
-Locating output:
+[Locating output (confirmed checks and results)]
 {_to_json(locating_output)}
 
-Manual excerpts used for locating:
+[Manual excerpts referenced during locating]
 {locate_manual}
 
-Return a short paragraph or bullet-style lines describing what an engineer would report after performing those locating steps.
+Output rules:
+- Use bullet points only.
+- Each bullet must correspond to a concrete, confirmed observation
+  (e.g., a test result, a yes/no confirmation, a measured value).
+- Preserve uncertainty (e.g., "not confirmed", "unknown") if present.
+- Avoid any interpretive language ("suggests", "likely", "indicates", "implies").
+
+Return ONLY the list of confirmed observations.
 """
     resp = client.responses.create(
-        model="gpt-4.1",
+        model="gpt-5.1",
         input=[{"role": "user", "content": prompt}],
     )
-    content = resp.output_text
-    return content.strip()
+    return resp.output_text.strip()
+
+
 
 
 async def run_case(case: CaseInput, vector_store) -> Dict[str, str]:
@@ -125,7 +166,12 @@ async def run_case(case: CaseInput, vector_store) -> Dict[str, str]:
         analyze_input = _build_analyze_input(client, identify_output, locating_result.final_output, locating_manual)
         record["analyze input"] = analyze_input
 
-        analyze_docs = get_manual_documents(query=analyze_input, k=3, vector_store=vector_store)
+        analyze_docs = get_manual_documents(
+            query=analyze_input,
+            k=3,
+            vector_store=vector_store,
+            part=media_hint_value,
+        )
         analyze_manual = format_context_from_docs(analyze_docs)
         record["analyze_manual"] = analyze_manual
 
@@ -142,6 +188,7 @@ async def run_case(case: CaseInput, vector_store) -> Dict[str, str]:
             query=analyze_output.root_cause,
             k=3,
             vector_store=vector_store,
+            part=media_hint_value,
         )
         action_manual = format_context_from_docs(action_docs)
         record["action_manual"] = action_manual

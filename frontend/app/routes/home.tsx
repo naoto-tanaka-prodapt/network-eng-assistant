@@ -275,6 +275,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
             <input type="hidden" name="phase" value="analyze" />
             <input type="hidden" name="session_id" value={sessionId} />
             <input type="hidden" name="facts" value={identifyResult?.facts ?? ""} />
+            <input type="hidden" name="media_hint" value={identifyResult?.media_hint ?? "unknown"} />
             <div className="space-y-2">
               <Label htmlFor="locating_response">Results from locating tests</Label>
               <Textarea
@@ -326,6 +327,7 @@ export default function Home({ actionData }: Route.ComponentProps) {
             <input type="hidden" name="phase" value="action" />
             <input type="hidden" name="session_id" value={sessionId} />
             <input type="hidden" name="root_cause" value={analysisResult?.root_cause ?? ""} />
+            <input type="hidden" name="media_hint" value={identifyResult?.media_hint ?? "unknown"} />
             <Button
               type="submit"
               variant="default"

@@ -56,7 +56,12 @@ async def locating_problem(
 @router.post("/api/analyze")
 async def analyze_problem(request: Annotated[AnalyzeProblemForm, Form()], vector_store=Depends(get_vector_store)):
     session = SQLiteSession(request.session_id, "conversations.db")
-    manuals = get_manual_documents(query=request.locating_response, k=3, vector_store=vector_store)
+    manuals = get_manual_documents(
+        query=request.locating_response,
+        k=3,
+        vector_store=vector_store,
+        part=request.media_hint,
+    )
     user_input = ANALYZE_USER_PROMPT.format(facts=request.facts , locating_response=request.locating_response, manual=format_context_from_docs(manuals))
     result = await Runner.run(create_analyze_agent, user_input, session=session)
     return result.final_output
@@ -64,7 +69,12 @@ async def analyze_problem(request: Annotated[AnalyzeProblemForm, Form()], vector
 @router.post("/api/action")
 async def action_for_problem(request: Annotated[ActionProblemForm, Form()], vector_store=Depends(get_vector_store)):
     session = SQLiteSession(request.session_id, "conversations.db")
-    manuals = get_manual_documents(query=request.root_cause, k=3, vector_store=vector_store)
+    manuals = get_manual_documents(
+        query=request.root_cause,
+        k=3,
+        vector_store=vector_store,
+        part=request.media_hint,
+    )
     user_input = ACTION_USER_PROMPT.format(root_cause=request.root_cause, manual=format_context_from_docs(manuals))
     result = await Runner.run(create_action_agent, user_input, session=session)
     return result.final_output
