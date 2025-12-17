@@ -56,11 +56,6 @@ Here is the original task:
 Here is what the network engineer confirmed for the test items:
 
 {locating_response}
-
-
-Here are the retrieved manual excerpts:
-
-{manual}
 """
 
 create_analyze_agent = Agent(

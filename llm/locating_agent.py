@@ -49,8 +49,6 @@ class LocatingOutput(BaseModel):
     )
 
 
-
-# ---- Prompts ----
 LOCATING_SYSTEM_PROMPT = """You are the Locating Agent for a network troubleshooting assistance system.
 
 Objective:
