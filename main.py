@@ -8,9 +8,11 @@ from sqlalchemy import text
 from config import settings
 from braintrust.wrappers.openai import BraintrustTracingProcessor
 from routers import agent_router, history_router
+import truststore
 
-# init_logger(project="Neteng", api_key=settings.BRAINTRUST_API_KEY)
-# set_trace_processors([BraintrustTracingProcessor(init_logger("Neteng", api_key=settings.BRAINTRUST_API_KEY))])
+truststore.inject_into_ssl()
+init_logger(project="Neteng", api_key=settings.BRAINTRUST_API_KEY)
+set_trace_processors([BraintrustTracingProcessor(init_logger("Neteng", api_key=settings.BRAINTRUST_API_KEY))])
 set_default_openai_key(settings.OPENAI_API_KEY)
 
 app = FastAPI()
