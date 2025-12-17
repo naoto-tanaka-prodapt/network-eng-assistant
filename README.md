@@ -155,9 +155,22 @@ This approach increases system and eval complexity compared to a single-step res
 **Trade-off**:
 Difficulty of tracing. Relying on an agent-based framework shifts more control logic closer to the LLM, which can reduce predictability.
 
-### 3. Why chose determistic flow?
+### 3. Why choose determistic flow?
+
+- I chose a deterministic flow to make system behavior as predictable and controllable as possible.
+- So, I did not use handoff, agent as tool.
+
+**Trade-off**:
+This design limits flexibility and automation
 
 ### 4. Why filter by category to retrieve vector store?
+
+- Without filtering, vector search often retrieved irrelevant sections.
+- So, Identify phase classifies the issue whether Physical/Network/Switch layer.
+- And ther, doing vector retrieval using this category.
+
+**Trade-off**:
+If the initial classification is incorrect, relevant information may be excluded from retrieval
 
 <br>
 
