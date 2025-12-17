@@ -78,6 +78,37 @@ Identify → Locate → Analyze → Action → Validate.**
 
 <br>
 
+## Evaluation
+
+### Evaluation Focus
+
+This project how to evaluates whether the system follows the troubleshooting guide as written
+The main criteria are:
+
+1. Whether the response was in accordance with the documentation
+2. Whether the procedures, safety measures, and prior confirmations were properly presented
+3. Avoidance of undocumented or out-of-order steps
+
+### Evaluation Approach
+
+- These criteria are difficult to capture using numeric metrics such as RAGAS or simple LLM-as-a-judge methods.
+- Ideally, evaluation would be performed by a domain expert familiar with the manual.
+- So, this project uses a guide-informed ChatGPT to judge whether each response aligns with the documented procedures, safety measures, and diagnostic order.
+- Due to time constraints, a simplified approach was adopted: the system executes all phases end-to-end, and the resulting outputs are evaluated collectively rather than phase by phase.
+
+1. Create input/output of each agents
+
+```sh
+python generate_agents_csv.py
+# and then, created agents_output.csv
+```
+
+2. Copy row
+
+3. just paste to [Network Troubleshooting Output Evaluator](https://chatgpt.com/g/g-69413b7d19ac8191ae887390fd2d5bf0-network-troubleshooting-output-evaluator)
+
+<br>
+
 ## Tech Stacks
 
 ### FrontEnd - React / React Router
