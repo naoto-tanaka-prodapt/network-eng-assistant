@@ -138,11 +138,22 @@ python generate_agents_csv.py
 
 ## Technical Dicision / Tradeoffs
 
-### 1. Why llm doing multi phase separately?
+### 1. Why Execute the LLM in Multiple Phases?
 
 - I chose **multi phase** to execute LLM this procedure.
+- Because generating the entire troubleshooting flow in a single step resulted in responses where different phases were mixed together.
+- In addition, it requires user input when analysis phases for next diagnosis.
 
-### 2. Why chose OpenAI Agents SDK?
+**Trade-off**:
+This approach increases system and eval complexity compared to a single-step response.
+
+### 2. Why Choose the OpenAI Agents SDK?
+
+- Preserving conversation state across llms easily.
+- Considering future expansion where phases such as Identify and Locate may require multiple interaction turns. 
+
+**Trade-off**:
+Difficulty of tracing. Relying on an agent-based framework shifts more control logic closer to the LLM, which can reduce predictability.
 
 ### 3. Why chose determistic flow?
 
