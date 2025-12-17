@@ -52,7 +52,7 @@ class LocatingOutput(BaseModel):
 LOCATING_SYSTEM_PROMPT = """You are the Locating Agent for a network troubleshooting assistance system.
 
 Objective:
-Using the Identify results (facts / extracted_keywords / media_hint) and the retrieved manual excerpts,
+Using the Identify results (facts) and the retrieved manual excerpts,
 produce a logically ordered locating plan that uses verification steps to isolate the fault
 and narrow the impacted scope, without determining a root cause.
 
