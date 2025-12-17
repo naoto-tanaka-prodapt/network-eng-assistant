@@ -20,6 +20,111 @@ This system allows an engineer to input a natural-language problem description a
 
 The solution is based on [the Frontline LAN Troubleshooting Guide](https://assets.tequipment.net/assets/3/7/TroubleshootingGuide-FrontlineLAN.pdf) and strictly follows its prescribed diagnostic methodology.
 
+<br>
+
+## Approach
+
+### Epicentor of this problem (Problem Space)
+
+Manual is long and information is scattered. So, 
+Engineers cannot instantly recall **the correct diagnostic order, safety checks and verification steps** during incidents.
+
+### Minimum feature for MVP (Solution Space)
+
+1. **Guiding users through the full sequence of
+Identify → Locate → Analyze → Action → Validate.**
+
+2. **Showing clearly safety checks and preconditions before execution.**
+
+3. **Showing original manual places for transparency.**
+
+### High Level Architecture
+
+![](./docs/architecture.drawio.png)
+
+### High Level Sequence
+
+![](./docs/workflow-overview.drawio.png)
+
+### Features
+
+#### 1. Running Identify → Locate → Analyze → Action → Validate flow using UI
+
+- The system generates a structured troubleshooting workflow that explicitly follows the sequence.
+- Each phase is clearly separated and ordered.
+
+![](./docs/feature1.png)
+
+#### 2. Explicit Safety and Prerequisite Checks
+
+- Identifies required safety precautions
+- Highlights preconditions and environmental checks
+- Ensures that prerequisite validation occurs before execution
+
+![](./docs/feature2.png)
+
+#### 3. Manual-Grounded Step Retrieval and showing evidence for check
+
+- All troubleshooting steps are derived directly from the official troubleshooting guide through retrieval
+
+![](./docs/feature3.png)
+
+#### 4. Additional: Sharing troubleshoot summary and user feedback
+
+- This is based on guidance in the troubleshooting manual, which emphasizes that past troubleshooting results should be shared.
+- Also, most issues can be resolved at the user level if clear guidance is provided on what to do next time.
+
+![](./docs/feature4.png)
+
+<br>
+
+## Tech Stacks
+
+### FrontEnd - React / React Router
+
+| Category | tech stack | Reason |
+| ---------| ---------- | -------|
+| Base     | React      | This is a popular technology, so it is easy to find engineers to maintain. Also, separating from the backend allows for scalability. |
+| Framework | React Router (Framework mode) | Routing and other settings are easy. There is little risk of vendor lock-in. |
+| Component Library | Shadcn/ui | To unify the overall design in component files |
+
+### Backend - FastAPI + OpenAI Agents SDK
+
+| Category | tech stack | Reason |
+| ---------| ---------- | -------|
+| Framework | FastAPI | Routing and other settings are easy. There is little risk of vendor lock-in. |
+| LLM Library | OpenAI Agents SDK | Considering future expansion to multi-turn. Ease of use of Conversation session. |
+| Vector Search | Langchain | Well abstracted, so it can be implemented with less code. |
+
+### DataStore - Qdrant / PostgreSQL
+
+| Category | tech stack | Reason |
+| ---------| ---------- | -------|
+| VectorDB | Qdrant | It can be persisted locally and does not require Docker, making local development easy. It can be used for free for a wide range of purposes even after deployment. |
+| RDB | PostgreSQL | Popular. |
+
+<br>
+
+## Technical Dicision / Tradeoffs
+
+### 1. Why llm doing multi phase separately?
+
+- I chose **multi phase** to execute LLM this procedure.
+
+### 2. Why chose OpenAI Agents SDK?
+
+### 3. Why chose determistic flow?
+
+### 4. Why filter by category to retrieve vector store?
+
+<br>
+
+## Key learning from this
+
+### 
+
+<br>
+
 ## How to run
 
 **Install Packages**
@@ -59,7 +164,6 @@ Run below python notebook from top code block
     alembic upgrade head
     ```
 
-
 **Backend**
 
 ```
@@ -73,51 +177,4 @@ cd frontend
 npm run dev
 ```
 
-
-## Approach
-
-### High Level Architecture
-
-![](./docs/architecture.drawio.png)
-
-### High Level Sequence
-
-![](./docs/workflow-overview.drawio.png)
-
-## Tech Stacks
-
-### FrontEnd - React / React Router
-
-| Category | tech stack | Reason |
-| ---------| ---------- | -------|
-| Base     | React      | This is a popular technology, so it is easy to find engineers to maintain. Also, separating from the backend allows for scalability. |
-| Framework | React Router (Framework mode) | Routing and other settings are easy. There is little risk of vendor lock-in. |
-| Component Library | Shadcn/ui | To unify the overall design in component files |
-
-### Backend - FastAPI + OpenAI Agents SDK
-
-| Category | tech stack | Reason |
-| ---------| ---------- | -------|
-| Framework | FastAPI | Routing and other settings are easy. There is little risk of vendor lock-in. |
-| LLM Library | OpenAI Agents SDK | Considering future expansion to multi-turn. Ease of use of Conversation session. |
-| Vector Search | Langchain | Well abstracted, so it can be implemented with less code. |
-
-### DataStore - Qdrant / PostgreSQL
-
-| Category | tech stack | Reason |
-| ---------| ---------- | -------|
-| VectorDB | Qdrant | It can be persisted locally and does not require Docker, making local development easy. It can be used for free for a wide range of purposes even after deployment. |
-| RDB | PostgreSQL | Popular. |
-
-## Main Topic / Tradeoffs
-
-### 1. Why llm doing multi phase separately?
-
-- I chose **multi phase** to execute LLM this procedure.
-
-### 2. Why chose OpenAI Agents SDK?
-
-### 3. Why chose determistic flow?
-
-### 4. Why filter by category to retrieve vector store?
 
